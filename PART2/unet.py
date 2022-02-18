@@ -7,12 +7,6 @@
 # <img src="https://i.imgur.com/LQORH9i.png" alt="drawing" width="500"/>
 # 
 
-# In[23]:
-
-
-
-
-
 # In[41]:
 
 
@@ -94,7 +88,6 @@ class convBlock(nn.Module):
     def forward(self, x):
         x = self.relu(self.conv1(x))
         x = self.INorm(x)
-        print(x.shape)
         x = self.relu(self.conv2(x))
         x = self.INorm(x)
         return x
@@ -132,14 +125,15 @@ class Encoder(nn.Module):
         return features
 
 
-# In[49]:
+# In[73]:
 
 
 encoder = Encoder()
 x = torch.randn(1, 3, WIDTH, HEIGHT)
 features = encoder(x)
-for f in features:
-    print(f.shape)
+if __name__ == '__main__':
+    for f in features:
+        print(f.shape)
 
 
 # ## Decoder(UpStream)
@@ -235,8 +229,9 @@ class Decoder(nn.Module):
 # In[54]:
 
 
-for i in features:
-    print(i.shape)
+if __name__ == '__main__':
+    for i in features:
+        print(i.shape)
 
 
 # In[55]:
@@ -283,11 +278,12 @@ y_pred = unet(x)
 y_pred.shape
 
 
-# In[69]:
+# In[72]:
 
 
-if get_ipython().__class__.__name__ =='ZMQInteractiveShell':
-    os.system('jupyter nbconvert unet.ipynb --to python')
+if __name__ == '__main__':
+    if get_ipython().__class__.__name__ =='ZMQInteractiveShell':
+        os.system('jupyter nbconvert unet.ipynb --to python')
 
 # get_ipython().__class__.__name__
 
