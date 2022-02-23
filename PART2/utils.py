@@ -1,3 +1,9 @@
+#!/usr/bin/env python
+# coding: utf-8
+
+# In[1]:
+
+
 import matplotlib.pyplot as plt
 import numpy as np
 import albumentations as A
@@ -6,6 +12,10 @@ import cv2
 import os
 import random
 import torch
+
+
+# In[2]:
+
 
 def show_image_mask(*img_, split=False):
     plt.figure(figsize=(10,3))
@@ -34,8 +44,67 @@ def show_image_mask(*img_, split=False):
     plt.show()
     plt.close()
     
+
+
+# In[8]:
+
+
+def find_objects_contours(mask):
+    print(mask.shape)
+    thresh = mask.astype(np.uint8)
+    contours, hier =         cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    np.shape(contours)
+
+    arr = np.array(contours)[-1].reshape(-1,2)
+    arr = arr.mean(axis=0)
+    return arr
+
+
+# In[9]:
+
+
+if __name__ == '__main__':
+    pass
+
+
+# In[10]:
+
+
+def center_to_4point(mask, arr, side_width, pad=25):
+    limit = len(mask)
+    points = [0]*4
     
+    if not pad:
+        pad = 0
+    value = side_width/2+pad    
+    for i in arr:
+        if side_width+2*pad > limit:
+            print(side_width+2*pad)
+            raise ValueError('not enough')
+        if i > limit:
+            raise ValueError('not include')
+            
+    for i in range(len(points)):
+        if i in [0,1]:
+            if arr[i%2] - value < 0:
+                points[i] = 0
+                points[i+2] += np.abs(arr[i%2] - value)
+            else:
+                points[i] = arr[i%2]-value
+        if i in [2,3]:
+            if arr[i%2]+value > limit:
+                print(arr[i%2]+value)
+                points[i] = len(mask)
+                points[i-2] -= np.abs(limit - arr[i%2] - value)
+            else:
+                points[i] = arr[i%2]+value
     
+    return np.round(points).astype(int)
+
+
+# In[11]:
+
+
 class mask_CutMix(DualTransform):
     def __init__(self,img_mask_list, always_apply=False, p=1.0):
         super().__init__(always_apply, p)
@@ -78,8 +147,7 @@ class mask_CutMix(DualTransform):
         
     def find_objects_contours(self, mask):
         thresh = mask
-        contours, hier = \
-            cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        contours, hier =             cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
         np.shape(contours)
 
         center = np.array(contours).reshape(-1,2)
@@ -118,43 +186,23 @@ class mask_CutMix(DualTransform):
         x_min, y_min, x_max, y_max = points
         return points, mask[y_min:y_max, x_min:x_max]
 
-    
-def find_objects_contours(mask):
-    thresh = mask
-    contours, hier = \
-        cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-    np.shape(contours)
 
-    arr = np.array(contours)[-1].reshape(-1,2)
-    arr = arr.mean(axis=0)
-    return arr
-def center_to_4point(mask, arr, side_width, pad=25):
-    limit = len(mask)
-    points = [0]*4
-    
-    if not pad:
-        pad = 0
-    value = side_width/2+pad    
-    for i in arr:
-        if side_width+2*pad > limit:
-            print(side_width+2*pad)
-            raise ValueError('not enough')
-        if i > limit:
-            raise ValueError('not include')
-            
-    for i in range(len(points)):
-        if i in [0,1]:
-            if arr[i%2] - value < 0:
-                points[i] = 0
-                points[i+2] += np.abs(arr[i%2] - value)
-            else:
-                points[i] = arr[i%2]-value
-        if i in [2,3]:
-            if arr[i%2]+value > limit:
-                print(arr[i%2]+value)
-                points[i] = len(mask)
-                points[i-2] -= np.abs(limit - arr[i%2] - value)
-            else:
-                points[i] = arr[i%2]+value
-    
-    return np.round(points).astype(int)
+# In[13]:
+
+
+if __name__ == '__main__':
+    if get_ipython().__class__.__name__ =='ZMQInteractiveShell':
+        os.system('jupyter nbconvert utils.ipynb --to python')
+
+
+# In[ ]:
+
+
+
+
+
+# In[ ]:
+
+
+
+
