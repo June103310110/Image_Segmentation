@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[1]:
+# In[4]:
 
 
 import matplotlib.pyplot as plt
@@ -12,9 +12,72 @@ import cv2
 import os
 import random
 import torch
+import time
 
 
-# In[2]:
+# In[69]:
+
+
+class patience:    
+    def __init__(self, patience=None):
+        self.patience = patience
+        self.record_value = 0
+        self.early_stop = False
+        self.time_dic = {}
+        self.ini = True
+        self.epoch_record = 0
+            
+    def record(self):
+        if self.patience != -1:
+            if self.ini and not self.patience:
+                print('No early stop')
+                self.ini = False
+                self.patience = -1
+            else:
+                if self.record_value >= self.patience:
+                    print('early stop')
+                    self.early_stop = True
+                self.record_value += 1
+    def reset(self):
+        self.record_value = 0
+        
+    def time(self, times_to_show=50, show=False):
+#         assert self.time_dic, '初始化時未開始計時'
+#         if not self.time_dic:
+#             self.time_dic = {}
+        epoch = self.epoch_record 
+        if len(self.time_dic) == 0:
+            key = 0
+        else:
+            key = list(self.time_dic.keys())[-1]+1
+        self.time_dic[key] = time.time()
+        
+        if show:
+
+            if (epoch)%(times_to_show) == 0:
+                dic = self.time_dic
+                lis = ['{0:.3f}'.format(dic[i*times_to_show]-dic[0]) for i in range(epoch//times_to_show+1)]
+#                 print(list(range(epoch//times_to_show+1)))
+                print(f'{self.epoch_record} epochs passed, ptime monitor every {times_to_show} epoch {lis}')
+                
+
+        self.epoch_record +=1
+        return self.time_dic
+
+        
+
+
+# In[70]:
+
+
+if __name__ == '__main__':
+    monitor = patience(None)
+    for i in range(151):
+        monitor.time(show=True)
+#     pass
+
+
+# In[59]:
 
 
 def show_image_mask(*img_, split=False):
@@ -32,8 +95,6 @@ def show_image_mask(*img_, split=False):
                     img =  img.flatten(0,2).int().detach().numpy()
             elif len(img.shape)==2:
                 img = img.int().detach().numpy()
-            
- 
         
         img = img - img.min()
         if len(np.shape(img)) == 2 or np.shape(img)[-1] == 1:
@@ -46,12 +107,11 @@ def show_image_mask(*img_, split=False):
     
 
 
-# In[8]:
+# In[60]:
 
 
 def find_objects_contours(mask):
-    print(mask.shape)
-    thresh = mask.astype(np.uint8)
+    thresh = mask
     contours, hier =         cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
     np.shape(contours)
 
@@ -60,20 +120,19 @@ def find_objects_contours(mask):
     return arr
 
 
-# In[9]:
+# In[61]:
 
 
 if __name__ == '__main__':
     pass
 
 
-# In[10]:
+# In[62]:
 
 
 def center_to_4point(mask, arr, side_width, pad=25):
     limit = len(mask)
     points = [0]*4
-    
     if not pad:
         pad = 0
     value = side_width/2+pad    
@@ -102,7 +161,7 @@ def center_to_4point(mask, arr, side_width, pad=25):
     return np.round(points).astype(int)
 
 
-# In[11]:
+# In[63]:
 
 
 class mask_CutMix(DualTransform):
@@ -145,14 +204,14 @@ class mask_CutMix(DualTransform):
         target_image[y_min:y_max, x_min:x_max] = transformed['image']
         return target_image
         
-    def find_objects_contours(self, mask):
+    def find_objects_contours(mask):
         thresh = mask
         contours, hier =             cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
         np.shape(contours)
 
-        center = np.array(contours).reshape(-1,2)
-        center = center.mean(axis=0)
-        return center
+        arr = np.array(contours)[-1].reshape(-1,2)
+        arr = arr.mean(axis=0)
+        return arr
 
     def center_to_4point(self, mask, arr, side_width, pad=None):
         limit = len(mask)
@@ -187,7 +246,7 @@ class mask_CutMix(DualTransform):
         return points, mask[y_min:y_max, x_min:x_max]
 
 
-# In[13]:
+# In[64]:
 
 
 if __name__ == '__main__':

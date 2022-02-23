@@ -7,7 +7,7 @@
 # <img src="https://i.imgur.com/LQORH9i.png" alt="drawing" width="500"/>
 # 
 
-# In[1]:
+# In[49]:
 
 
 BATCH_SIZE = 32
@@ -16,7 +16,7 @@ WIDTH = 512
 HEIGHT = 512
 
 
-# In[2]:
+# In[50]:
 
 
 import cv2
@@ -28,14 +28,14 @@ import torchvision
 from torch.nn import functional as F
 
 
-# In[3]:
+# In[51]:
 
 
 import warnings
 warnings.filterwarnings("ignore")
 
 
-# In[4]:
+# In[52]:
 
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -51,7 +51,7 @@ device
 # 
 # > 上圖為一整個batch的feature-map。輸入6張圖片，輸入6chs, 輸出也是6chs(C方向看進去是channel, N方向看進去是圖片)
 
-# In[5]:
+# In[53]:
 
 
 # # 原始版本
@@ -66,7 +66,7 @@ device
 #         return self.relu(self.conv2(self.relu(self.conv1(x))))
 
 
-# In[6]:
+# In[54]:
 
 
 ## 加入instance normalization
@@ -86,25 +86,26 @@ class convBlock(nn.Module):
         self.INorm = torch.nn.InstanceNorm2d(out_ch, affine=True)
         
     def forward(self, x):
-        x = self.INorm(self.conv1(x))
-        x = self.relu(x)
-        x = self.INorm(self.conv2(x))
-        x = self.relu(x)
+        x = self.relu(self.conv1(x))
+        x = self.INorm(x)
+        x = self.relu(self.conv2(x))
+        x = self.INorm(x)
         return x
 
 
-# In[7]:
+# In[55]:
 
 
-block = convBlock(1, 64)
-x = torch.randn(1, 1, WIDTH, HEIGHT)
-block(x).shape
+if __name__ == '__main__':
+    block = convBlock(1, 64)
+    x = torch.randn(1, 1, WIDTH, HEIGHT)
+    block(x).shape
 
 
 # ## Encoder(DownStream)
 # 將影像進行編碼，過程中解析度會縮小(maxpooling、convolution)
 
-# In[8]:
+# In[56]:
 
 
 class Encoder(nn.Module):
@@ -125,13 +126,13 @@ class Encoder(nn.Module):
         return features
 
 
-# In[9]:
+# In[57]:
 
 
-encoder = Encoder()
-x = torch.randn(1, 3, WIDTH, HEIGHT)
-features = encoder(x)
 if __name__ == '__main__':
+    encoder = Encoder()
+    x = torch.randn(1, 3, WIDTH, HEIGHT)
+    features = encoder(x)
     for f in features:
         print(f.shape)
 
@@ -155,16 +156,17 @@ if __name__ == '__main__':
 # <!-- #### 替代方案 UpSampling(Unpooling)+Convolution -->
 # 
 
-# In[10]:
+# In[58]:
 
 
 # ConvTranspose2d透過設定k=2, s=2, output_padding=0可以讓影像從28x28變成56x56
-x = torch.randn(1, 3, 28, 28)
-x = nn.ConvTranspose2d(3, 30, kernel_size=2, stride=2, output_padding=0)(x)
-x.shape
+if __name__ == '__main__':
+    x = torch.randn(1, 3, 28, 28)
+    x = nn.ConvTranspose2d(3, 30, kernel_size=2, stride=2, output_padding=0)(x)
+    x.shape
 
 
-# In[11]:
+# In[59]:
 
 
 class UpSampleConvs(nn.Module):
@@ -185,17 +187,18 @@ class UpSampleConvs(nn.Module):
         return x
 
 
-# In[12]:
+# In[60]:
 
 
-x = torch.randn(1, 3, 28, 28)
-x = UpSampleConvs(3,30)(x)
-x.shape
+if __name__ == '__main__':
+    x = torch.randn(1, 3, 28, 28)
+    x = UpSampleConvs(3,30)(x)
+    x.shape
 
 
 # ### decoder(上採樣) module
 
-# In[13]:
+# In[61]:
 
 
 class Decoder(nn.Module):
@@ -226,7 +229,7 @@ class Decoder(nn.Module):
         return enc_ftrs
 
 
-# In[14]:
+# In[62]:
 
 
 if __name__ == '__main__':
@@ -234,7 +237,7 @@ if __name__ == '__main__':
         print(i.shape)
 
 
-# In[15]:
+# In[63]:
 
 
 if __name__ == '__main__':
@@ -244,49 +247,52 @@ if __name__ == '__main__':
     decoder(x, features[::-1][1:]).shape 
 
 
-# ## Unet構建
+# nn.Tanh## Unet構建
 # 結合encoder和decoder組成Unet。
 # - 在輸出層如果用softmax做多元分類問題預測的話，類別數量要+1(num_classes+background)
 
-# In[19]:
+# In[67]:
 
 
 class UNet(nn.Module):
-    def __init__(self, out_sz, enc_chs=(3,32,64,128,256,512), dec_chs=(512, 256, 128, 64, 32), num_class=1, retain_dim=False, padding = 'same'):
+    def __init__(self, out_sz, enc_chs=(3,64,128,256,512,1024), dec_chs=(1024, 512, 256, 128, 64), num_class=1, retain_dim=False, padding='same', activation=None):
         super().__init__()
         self.encoder     = Encoder(enc_chs, padding=padding)
         self.decoder     = Decoder(dec_chs, padding=padding)
         self.head        = nn.Conv2d(dec_chs[-1], num_class, 1)
         self.retain_dim  = retain_dim
         self.out_sz = out_sz
+        self.activation = activation
 
     def forward(self, x):
         enc_ftrs = self.encoder(x)
         out      = self.decoder(enc_ftrs[::-1][0], enc_ftrs[::-1][1:]) # 把不同尺度的所有featuremap都輸入decoder，我們在decoder需要做featuremap的拼接
         out      = self.head(out)
+        if self.activation:
+            out = self.activation(out)
+        
         if self.retain_dim:
             out = F.interpolate(out, self.out_sz)
         return out
 
 
-# In[17]:
+# In[ ]:
 
 
-unet = UNet(num_class=1, padding = 'same', out_sz=(WIDTH,HEIGHT), retain_dim=False)
-unet#.to(device)
-x    = torch.randn(1, 3, WIDTH, HEIGHT)#.to(device)
-y_pred = unet(x)
-y_pred.shape
+if __name__ == '__main__':
+    unet = UNet(num_class=1, padding = 'same', out_sz=(WIDTH,HEIGHT), retain_dim=False)
+    unet#.to(device)
+    x    = torch.randn(1, 3, WIDTH, HEIGHT)#.to(device)
+    y_pred = unet(x)
+    y_pred.shape
 
 
-# In[18]:
+# In[ ]:
 
 
 if __name__ == '__main__':
     if get_ipython().__class__.__name__ =='ZMQInteractiveShell':
         os.system('jupyter nbconvert unet.ipynb --to python')
-
-# get_ipython().__class__.__name__
 
 
 # In[ ]:
