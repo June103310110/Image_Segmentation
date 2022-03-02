@@ -1,11 +1,10 @@
 # Image_Segmentation
 
 ## Intro of segmentation
-- 影像增強
-- scaling
+- [Aubementation 對標註也做影像增強/客製化方法](https://colab.research.google.com/drive/1_2T0IFvjgj6kUb6UCIPDe0uLYu1seTSq?usp=sharing)
+- [Scaling 上採樣與下採樣](https://colab.research.google.com/drive/1wU7gQeKBfhrYSPKKh8KyQwzpoJwb3Jix?usp=sharing)
 - dilated convolution (deeplab
 - normalization
-- Multi-scale and pyramid network
 ## Semantic Segmentation
 ![](https://i.imgur.com/F7vDzoa.png)
 - create_unet
