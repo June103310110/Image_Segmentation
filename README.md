@@ -7,6 +7,7 @@
 - normalization
 - Multi-scale and pyramid network
 ## Semantic Segmentation
+![](https://i.imgur.com/F7vDzoa.png)
 - create_unet
   - https://colab.research.google.com/drive/1jswxT5G4Dd3x6Wq0HmaAeGp7xJj7bwMz?usp=sharing
 - training Unet
