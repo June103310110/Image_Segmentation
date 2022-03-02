@@ -2,7 +2,7 @@
 ![](https://i.imgur.com/vbmbcWS.png)
 
 ### ref
-- dataset https://public.roboflow.com/object-detection/raccoon
+- dataset: https://public.roboflow.com/object-detection/raccoon
 - reference: https://github.com/chingi071/SOLOv2_training
 ## Colab example
 - 轉換資料集(基於labelme)
