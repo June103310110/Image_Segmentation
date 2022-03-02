@@ -276,7 +276,7 @@ class UNet(nn.Module):
         return out
 
 
-# In[ ]:
+# In[68]:
 
 
 if __name__ == '__main__':
@@ -287,7 +287,7 @@ if __name__ == '__main__':
     y_pred.shape
 
 
-# In[ ]:
+# In[69]:
 
 
 if __name__ == '__main__':
