@@ -7,6 +7,7 @@
 
 
 ## Colab example:
+![](https://i.imgur.com/F7vDzoa.png)
 - Unet
 - training Unet
-  - ![](https://i.imgur.com/F7vDzoa.png)
+ 
