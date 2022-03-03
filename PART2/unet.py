@@ -7,7 +7,7 @@
 # <img src="https://i.imgur.com/LQORH9i.png" alt="drawing" width="500"/>
 # 
 
-# In[49]:
+# In[1]:
 
 
 BATCH_SIZE = 32
@@ -16,7 +16,7 @@ WIDTH = 512
 HEIGHT = 512
 
 
-# In[50]:
+# In[2]:
 
 
 import cv2
@@ -28,14 +28,14 @@ import torchvision
 from torch.nn import functional as F
 
 
-# In[51]:
+# In[3]:
 
 
 import warnings
 warnings.filterwarnings("ignore")
 
 
-# In[52]:
+# In[4]:
 
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -51,7 +51,7 @@ device
 # 
 # > 上圖為一整個batch的feature-map。輸入6張圖片，輸入6chs, 輸出也是6chs(C方向看進去是channel, N方向看進去是圖片)
 
-# In[53]:
+# In[5]:
 
 
 # # 原始版本
@@ -66,7 +66,7 @@ device
 #         return self.relu(self.conv2(self.relu(self.conv1(x))))
 
 
-# In[54]:
+# In[6]:
 
 
 ## 加入instance normalization
@@ -86,14 +86,14 @@ class convBlock(nn.Module):
         self.INorm = torch.nn.InstanceNorm2d(out_ch, affine=True)
         
     def forward(self, x):
-        x = self.relu(self.conv1(x))
-        x = self.INorm(x)
-        x = self.relu(self.conv2(x))
-        x = self.INorm(x)
+        x = self.INorm(self.conv1(x))
+        x = self.relu(x)
+        x = self.INorm(self.conv2(x))
+        x = self.relu(x)
         return x
 
 
-# In[55]:
+# In[7]:
 
 
 if __name__ == '__main__':
@@ -105,7 +105,7 @@ if __name__ == '__main__':
 # ## Encoder(DownStream)
 # 將影像進行編碼，過程中解析度會縮小(maxpooling、convolution)
 
-# In[56]:
+# In[8]:
 
 
 class Encoder(nn.Module):
@@ -126,7 +126,7 @@ class Encoder(nn.Module):
         return features
 
 
-# In[57]:
+# In[9]:
 
 
 if __name__ == '__main__':
@@ -156,7 +156,7 @@ if __name__ == '__main__':
 # <!-- #### 替代方案 UpSampling(Unpooling)+Convolution -->
 # 
 
-# In[58]:
+# In[10]:
 
 
 # ConvTranspose2d透過設定k=2, s=2, output_padding=0可以讓影像從28x28變成56x56
@@ -166,7 +166,7 @@ if __name__ == '__main__':
     x.shape
 
 
-# In[59]:
+# In[11]:
 
 
 class UpSampleConvs(nn.Module):
@@ -187,7 +187,7 @@ class UpSampleConvs(nn.Module):
         return x
 
 
-# In[60]:
+# In[12]:
 
 
 if __name__ == '__main__':
@@ -198,7 +198,7 @@ if __name__ == '__main__':
 
 # ### decoder(上採樣) module
 
-# In[61]:
+# In[13]:
 
 
 class Decoder(nn.Module):
@@ -229,7 +229,7 @@ class Decoder(nn.Module):
         return enc_ftrs
 
 
-# In[62]:
+# In[14]:
 
 
 if __name__ == '__main__':
@@ -237,7 +237,7 @@ if __name__ == '__main__':
         print(i.shape)
 
 
-# In[63]:
+# In[15]:
 
 
 if __name__ == '__main__':
@@ -251,7 +251,7 @@ if __name__ == '__main__':
 # 結合encoder和decoder組成Unet。
 # - 在輸出層如果用softmax做多元分類問題預測的話，類別數量要+1(num_classes+background)
 
-# In[67]:
+# In[16]:
 
 
 class UNet(nn.Module):
@@ -276,7 +276,7 @@ class UNet(nn.Module):
         return out
 
 
-# In[68]:
+# In[17]:
 
 
 if __name__ == '__main__':
@@ -287,7 +287,7 @@ if __name__ == '__main__':
     y_pred.shape
 
 
-# In[69]:
+# In[18]:
 
 
 if __name__ == '__main__':
