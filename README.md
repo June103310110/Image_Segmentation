@@ -3,7 +3,7 @@
 ## Intro of segmentation
 - Aubementation 對標註也做影像增強/客製化方法 [01_custom_augmentation.ipynb](https://colab.research.google.com/drive/1_2T0IFvjgj6kUb6UCIPDe0uLYu1seTSq?usp=sharing)
 - Scaling 上採樣與下採樣 [02_Scaling.ipynb](https://colab.research.google.com/drive/1wU7gQeKBfhrYSPKKh8KyQwzpoJwb3Jix?usp=sharing)
-- dilated convolution [03_Dilated_conv.ipynb](https://colab.research.google.com/drive/13WQ_UJQSu1ePM3w_p1z6Gw53Ac_ZulId?usp=sharing)
+- Dilated convolution介紹與應用 [03_Dilated_conv.ipynb](https://colab.research.google.com/drive/13WQ_UJQSu1ePM3w_p1z6Gw53Ac_ZulId?usp=sharing)
 
 ## Semantic Segmentation
 ![](https://i.imgur.com/F7vDzoa.png)
