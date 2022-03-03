@@ -204,7 +204,7 @@ class mask_CutMix(DualTransform):
         target_image[y_min:y_max, x_min:x_max] = transformed['image']
         return target_image
         
-    def find_objects_contours(mask):
+    def find_objects_contours(self,mask):
         thresh = mask
         contours, hier =             cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
         np.shape(contours)
