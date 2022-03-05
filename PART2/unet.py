@@ -181,8 +181,8 @@ class UpSampleConvs(nn.Module):
         x = self.upSample(x)
 #         x = self.relu(x)
         x = self.conv(x)
-        x = self.relu(x)
         x = self.INorm(x)
+        x = self.relu(x)
 #         return self.relu(self.conv2(self.relu(self.upSample(x))))
         return x
 
