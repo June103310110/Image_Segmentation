@@ -1,5 +1,5 @@
 # Unet training (pytorch)
-![](https://i.imgur.com/F7vDzoa.png)
+![image](https://user-images.githubusercontent.com/32012425/156869013-0b7a9373-e5ec-4ba9-8a27-eadb7b23a453.png)
 
 ### reference:
 - dataset https://www.mvtec.com/company/research/datasets/mvtec-ad
