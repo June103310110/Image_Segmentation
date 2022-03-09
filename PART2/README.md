@@ -50,20 +50,20 @@ FCN結構在輸出時會將前級的隱藏層(ex: pool4)，傳遞到後級(pool5
 在ResUnet之後還有出現[Inception-Unet(2020)](https://dl.acm.org/doi/abs/10.1145/3376922)，大體上就是把Residual convolution Block換成Inception-like的Block。
 
 
-![](https://latex.codecogs.com/svg.latex?\\U^2net)
 
-#### 最後是[$U^2net$](https://arxiv.org/pdf/2005.09007.pdf)
+
+#### 最後是![](https://latex.codecogs.com/svg.latex?\\U^2net)[Link](https://arxiv.org/pdf/2005.09007.pdf)
 大體上，針對Convolution Block做的這些演進與更改，主要的目的提取更多細節，但實際上每一層的Block能夠提取到的細節是受限於當前特徵向量的解析度的，也就是當前卷積核在當前的解析度下，能獲取的感受野是小的，也就是local feature，這對於尋找到顯著的、用以進行識別(recognize)的特徵是有幫助的，但對於輪廓、形狀甚至材質等特徵，我們會希望萃取non-local(global) features，這也是影像分割需要的。
 
-於是有些研究就開始思考如何在單一層(單一個block)中同時萃取local feature和non-local(global) features，實際上Inception-Unet就是一個開端，而$$U^2net$$則將它發揚光大。
+於是有些研究就開始思考如何在單一層(單一個block)中同時萃取local feature和non-local(global) features，實際上Inception-Unet就是一個開端，而![](https://latex.codecogs.com/svg.latex?\\U^2net)則將它發揚光大。
 
 ![](https://i.imgur.com/RXQyIBm.png)
 
-$`U^2net`$ 的Block稱為$residual U-block, RSU$，也就是上圖最右邊的Block，相對於Inception-Unet，雖然兩者都是為了能在高解析度的影像就獲取Global information(with non-local features)，但Inception-block使用的多層空洞卷積會造成計算量以及記憶體的負擔，為了解決這一點，RSU-block希望使用傳統的pooling方法(max-pooling)來增加感受野而不是使用空洞卷積，並同時在block內對特徵向量進行連續的池化和卷積。
+![](https://latex.codecogs.com/svg.latex?\\U^2net)的Block稱為`residual U-block, RSU`，也就是上圖最右邊的Block，相對於Inception-Unet，雖然兩者都是為了能在高解析度的影像就獲取Global information(with non-local features)，但Inception-block使用的多層空洞卷積會造成計算量以及記憶體的負擔，為了解決這一點，RSU-block希望使用傳統的pooling方法(max-pooling)來增加感受野而不是使用空洞卷積，並同時在block內對特徵向量進行連續的池化和卷積。
 
 但如果在block內對特徵向量進行連續的池化和卷積，解析度還是會損失的。於是為了在block內萃取local/non-local feature的同時不損失特徵向量解析度，作者將block設計成一個小型的Unet，其中使用到的卷積的padding設定為same，下採樣階段使用maxpooling，上採樣則是二次線性差值。
 
-然後用這個RSU block取代convolution block，就是$$U^2Net$$了。
+然後用這個RSU block取代convolution block，就完成了。
 > ref https://github.com/xuebinqin/U-2-Net
 
 如下圖所示，可以看到基於RSU block，他的算力需求相較INC block(Inception Unet)有了大幅下降。
