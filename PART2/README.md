@@ -75,4 +75,4 @@ U<sup>2</sup>-Net
 U^2Net
 ```
 
-`U^2Net`
+`math U^2Net`
