@@ -49,7 +49,8 @@ FCN結構在輸出時會將前級的隱藏層(ex: pool4)，傳遞到後級(pool5
 
 在ResUnet之後還有出現[Inception-Unet(2020)](https://dl.acm.org/doi/abs/10.1145/3376922)，大體上就是把Residual convolution Block換成Inception-like的Block。
 
-![](http://latex.codecogs.com/gif.latex?\\U^2net})
+![](http://latex.codecogs.com/gif.latex?\\U^2net)
+![](http://latex.codecogs.com/gif.latex?\\U^2net)
 
 #### 最後是[$U^2net$](https://arxiv.org/pdf/2005.09007.pdf)
 大體上，針對Convolution Block做的這些演進與更改，主要的目的提取更多細節，但實際上每一層的Block能夠提取到的細節是受限於當前特徵向量的解析度的，也就是當前卷積核在當前的解析度下，能獲取的感受野是小的，也就是local feature，這對於尋找到顯著的、用以進行識別(recognize)的特徵是有幫助的，但對於輪廓、形狀甚至材質等特徵，我們會希望萃取non-local(global) features，這也是影像分割需要的。
