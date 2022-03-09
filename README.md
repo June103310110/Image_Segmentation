@@ -6,7 +6,7 @@
 - Dilated convolution介紹與應用(DeepLab) [03_Dilated_conv.ipynb](https://colab.research.google.com/drive/13WQ_UJQSu1ePM3w_p1z6Gw53Ac_ZulId?usp=sharing)
 
 ## Semantic Segmentation FCN/FPN以及語意分割模型
-![](https://i.imgur.com/PRaO8Ht.png)
+![image](https://user-images.githubusercontent.com/32012425/157360181-0dd63a80-05ca-4437-823d-5ced6b291620.png)
 - create_unet
   - https://colab.research.google.com/drive/1jswxT5G4Dd3x6Wq0HmaAeGp7xJj7bwMz?usp=sharing
 - training Unet
