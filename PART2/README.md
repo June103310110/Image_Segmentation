@@ -70,4 +70,7 @@ FCN結構在輸出時會將前級的隱藏層(ex: pool4)，傳遞到後級(pool5
 
 ![](https://i.imgur.com/tJDsMJp.png)
 
-
+U<sup>2</sup>-Net
+```math
+U^2Net
+```
