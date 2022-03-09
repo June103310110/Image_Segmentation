@@ -56,7 +56,7 @@ FCN結構在輸出時會將前級的隱藏層(ex: pool4)，傳遞到後級(pool5
 
 ![](https://i.imgur.com/RXQyIBm.png)
 
-$U^2net$的Block稱為$residual U-block, RSU$，也就是上圖最右邊的Block，相對於Inception-Unet，雖然兩者都是為了能在高解析度的影像就獲取Global information(with non-local features)，但Inception-block使用的多層空洞卷積會造成計算量以及記憶體的負擔，為了解決這一點，RSU-block希望使用傳統的pooling方法(max-pooling)來增加感受野而不是使用空洞卷積，並同時在block內對特徵向量進行連續的池化和卷積。
+$U^2net$ 的Block稱為$residual U-block, RSU$，也就是上圖最右邊的Block，相對於Inception-Unet，雖然兩者都是為了能在高解析度的影像就獲取Global information(with non-local features)，但Inception-block使用的多層空洞卷積會造成計算量以及記憶體的負擔，為了解決這一點，RSU-block希望使用傳統的pooling方法(max-pooling)來增加感受野而不是使用空洞卷積，並同時在block內對特徵向量進行連續的池化和卷積。
 
 但如果在block內對特徵向量進行連續的池化和卷積，解析度還是會損失的。於是為了在block內萃取local/non-local feature的同時不損失特徵向量解析度，作者將block設計成一個小型的Unet，其中使用到的卷積的padding設定為same，下採樣階段使用maxpooling，上採樣則是二次線性差值。
 
