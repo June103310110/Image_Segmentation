@@ -8,7 +8,7 @@
 
 ## Colab example:
 - create_unet 
-  - [!create unet](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1jswxT5G4Dd3x6Wq0HmaAeGp7xJj7bwMz?usp=sharing)
+  - [!create unet](https://colab.research.google.com/assets/colab-badge.svg)](https://raw.githubusercontent.com/June103310110/Image_Segmentation/main/PART2/unet.ipynb)
 - training Unet
   - https://colab.research.google.com/drive/1CyhnCdrCxXvndX_QNSMzZDb4Pc9rys7x?usp=sharing
  
