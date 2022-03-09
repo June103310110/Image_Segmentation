@@ -49,7 +49,7 @@ FCN結構在輸出時會將前級的隱藏層(ex: pool4)，傳遞到後級(pool5
 
 在ResUnet之後還有出現[Inception-Unet(2020)](https://dl.acm.org/doi/abs/10.1145/3376922)，大體上就是把Residual convolution Block換成Inception-like的Block。
 
-![](http://latex.codecogs.com/gif.latex?\\U^2net)
+
 ![](http://latex.codecogs.com/gif.latex?\\U^2net)
 
 #### 最後是[$U^2net$](https://arxiv.org/pdf/2005.09007.pdf)
@@ -71,6 +71,8 @@ $`U^2net`$ 的Block稱為$residual U-block, RSU$，也就是上圖最右邊的Bl
 ![](https://i.imgur.com/tJDsMJp.png)
 
 
+
+![](http://latex.codecogs.com/gif.latex?\\U^2net)
 
 
 
