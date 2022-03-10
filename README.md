@@ -1,4 +1,6 @@
 # Image_Segmentation
+### 參考文件
+- [Unet家族的演進](https://github.com/June103310110/Image_Segmentation/blob/main/PART2/README.md)
 
 ## Intro of segmentation 常見的影像分割架構設計
 - Albumentation 對標註也做影像增強/客製化方法 [01_custom_augmentation.ipynb](https://colab.research.google.com/drive/1_2T0IFvjgj6kUb6UCIPDe0uLYu1seTSq?usp=sharing)
