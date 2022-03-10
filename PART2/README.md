@@ -6,12 +6,12 @@
 
 
 ## Colab example:
-- create_unet 
+- create_unet
   - https://colab.research.google.com/drive/1jswxT5G4Dd3x6Wq0HmaAeGp7xJj7bwMz?usp=sharing
-- training Unet 
+- training Unet
   - https://colab.research.google.com/drive/1CyhnCdrCxXvndX_QNSMzZDb4Pc9rys7x?usp=sharing
- 
-
+- 補充
+  - [create_train_ResUnet.ipynb](https://colab.research.google.com/drive/1SUKf7uI9Ezl1fAKJEPiOtf1nEfFTk9k5?usp=sharing)
 
 ## Unet家族的演進
 最開始的Unet借鑑於[FCN(Fully convolutional networks for semantic segmentation, 2014)](https://arxiv.org/pdf/1411.4038.pdf)的發展，FCN的網路中只有用到卷積層，並捨棄全連階層。在最後一個layer做上採樣將解析度縮放到原始影像的解析度，通道數則依據類別數而定，最後用pixel-wise的softmax來預測類別。
