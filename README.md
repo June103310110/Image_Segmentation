@@ -24,4 +24,4 @@
   - https://colab.research.google.com/drive/1Dsfhnj2mNkTtqjXgqUOXrMOI2u395Uhp?usp=sharing
 - 補充: maskRCNN
   - https://colab.research.google.com/drive/1dBHrjzDjAk8HShQ49wu1jPd65WXXKS4a#scrollTo=EtP9NahKiTWX
-  - (torch ver. Github) https://github.com/multimodallearning/pytorch-mask-rcnn
+  - (torch ver. 3rd. ithub) https://github.com/multimodallearning/pytorch-mask-rcnn
