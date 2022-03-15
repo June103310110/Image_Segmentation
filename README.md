@@ -13,7 +13,7 @@
   - https://colab.research.google.com/drive/1jswxT5G4Dd3x6Wq0HmaAeGp7xJj7bwMz?usp=sharing
 - training Unet
   - https://colab.research.google.com/drive/1CyhnCdrCxXvndX_QNSMzZDb4Pc9rys7x?usp=sharing
-- 補充
+- 補充: ResUnet
   - [create_train_ResUnet.ipynb](https://colab.research.google.com/drive/1SUKf7uI9Ezl1fAKJEPiOtf1nEfFTk9k5?usp=sharing)
 
 ## Instance Segmentation SOLO實例分割技巧
