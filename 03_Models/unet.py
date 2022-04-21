@@ -1,42 +1,12 @@
-#!/usr/bin/env python
-# coding: utf-8
-
-# # Unet
-# source: https://amaarora.github.io/2020/09/13/unet.html
-# 
-# <img src="https://i.imgur.com/LQORH9i.png" alt="drawing" width="500"/>
-# 
-
-# In[1]:
-
-
-BATCH_SIZE = 32
-NUM_LABELS = 1
-WIDTH = 512
-HEIGHT = 512
-
-
-# In[2]:
-
-
-import cv2
 import torch # 1.9
 import torch.nn as nn
-import numpy as np
-import os
 import torchvision
 from torch.nn import functional as F
-
-
-# In[3]:
-
-
+import numpy as np
+import cv2
+import os
 import warnings
 warnings.filterwarnings("ignore")
-
-
-# In[4]:
-
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 # device = 'cpu' # for debug建議使用cpu作為torch的運行背景
@@ -51,23 +21,16 @@ device
 # 
 # > 上圖為一整個batch的feature-map。輸入6張圖片，輸入6chs, 輸出也是6chs(C方向看進去是channel, N方向看進去是圖片)
 
-# In[5]:
-
-
-# # 原始版本
-# class convBlock(nn.Module):
-#     def __init__(self, in_ch, out_ch):
-#         super().__init__()
-#         self.conv1 = nn.Conv2d(in_ch, out_ch, 3, padding=1)
-#         self.relu  = nn.ReLU()
-#         self.conv2 = nn.Conv2d(out_ch, out_ch, 3, padding=1)
+# 原始版本
+class convBlock(nn.Module):
+    def __init__(self, in_ch, out_ch):
+        super().__init__()
+        self.conv1 = nn.Conv2d(in_ch, out_ch, 3, padding=1)
+        self.relu  = nn.ReLU()
+        self.conv2 = nn.Conv2d(out_ch, out_ch, 3, padding=1)
     
-#     def forward(self, x):
-#         return self.relu(self.conv2(self.relu(self.conv1(x))))
-
-
-# In[6]:
-
+    def forward(self, x):
+        return self.relu(self.conv2(self.relu(self.conv1(x))))
 
 ## 加入instance normalization
 class convBlock(nn.Module):
