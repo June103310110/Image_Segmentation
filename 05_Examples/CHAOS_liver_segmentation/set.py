@@ -1,17 +1,17 @@
 import os 
-os.system('pip3 install -r ./requirements.txt')
-
-
+os.system('pip3 install -q -r ./requirements.txt')
+os.system('pip3 install --upgrade gdown')
 
 import gdown 
 '''
 If dataset is unavailable, plz contact me: june103310110@gmail.com.
 '''
 # download dataset 
-os.system('pip install --upgrade gdown')
-url = "https://drive.google.com/u/1/uc?id=15EVEIB2o-sJJd0qOjoFbZrz4briIYoeF&export=download"
+url = "https://drive.google.com/u/0/uc?id=1r1gRIZt7V4rNMzGvZXjQ1mLrJ0j5l-7i&export=download"
 output = "full_data.zip"
-os.remove('full_data.zip')
 gdown.download(url, output)
-os.system('unzip -o full_data.zip -d ./')
+
+os.system('mkdir data')
+os.system(f'unzip -o {output} -d ./data')
+os.system(f'rm -f {output}')
 

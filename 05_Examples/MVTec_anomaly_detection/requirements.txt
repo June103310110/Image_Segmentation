@@ -1,3 +1,2 @@
-pip3 install albumentations>=1.1.0
-pip3 install pydicom>=2.3.0
-pip3 install gdown>=4.4.0
+albumentations==1.1.0
+gdown>=4.4.0
