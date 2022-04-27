@@ -187,17 +187,17 @@ class UNet(nn.Module):
         super().__init__()     
         if isinstance(out_sz,(int)): self.out_sz = (out_sz, out_sz)
         if isinstance(out_sz,(tuple,list)): self.out_sz = tuple(out_sz)
-                
-        self.input = convBlock(in_ch, 64, 3, padding=1)
-        self.head = nn.Conv2d(64, out_ch, 1)
+        
+        chs = (64, 128, 256, 512, 1024)
+        
+        self.head = nn.Conv2d(chs[0], out_ch, 1)
         self.activation = activation
         self.out_sz = out_sz
-        
         
         '''
         Unet with nn.ModuleList
         '''
-        chs = (64, 128, 256, 512, 1024)
+        self.input = convBlock(in_ch, chs[0], 3, padding=1)
         self.down_list = nn.ModuleList([Down(chs[i], chs[i+1], padding='same')for i in range(len(chs)-1)]) 
         chs = chs[::-1]
         self.up_list = nn.ModuleList([Up(chs[i], chs[i+1], padding='same')for i in range(len(chs)-1)]) 
@@ -272,9 +272,10 @@ if __name__ == '__main__':
     print(y_pred.shape)
 
 
-# In[1]:
+# In[2]:
 
 
+import os
 if __name__ == '__main__':
     if get_ipython().__class__.__name__ =='ZMQInteractiveShell':
         os.system('jupyter nbconvert unet.ipynb --to python')
