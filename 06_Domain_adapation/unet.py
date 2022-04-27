@@ -64,14 +64,12 @@ class convBlock(nn.Module):
         self.conv1 = nn.Conv2d(in_ch, out_ch, kernel_size, padding=padding, bias=False)
         self.relu  = nn.ReLU()
         self.conv2 = nn.Conv2d(out_ch, out_ch, kernel_size, padding=padding, bias=False)
-        self.Norm = torch.nn.InstanceNorm2d(out_ch)
-#         self.Norm = torch.nn.GroupNorm(1, out_ch)
-#         self.Norm = torch.nn.BatchNorm2d(out_ch)
+        self.INorm = torch.nn.InstanceNorm2d(out_ch, affine=True)
         
     def forward(self, x):
-        x = self.Norm(self.conv1(x))
+        x = self.INorm(self.conv1(x))
         x = self.relu(x)
-        x = self.Norm(self.conv2(x))
+        x = self.INorm(self.conv2(x))
         x = self.relu(x)
         return x
 
@@ -194,7 +192,7 @@ class UNet(nn.Module):
         
         self.head = nn.Conv2d(chs[0], out_ch, 1)
         self.activation = activation
-
+        self.out_sz = out_sz
         
         '''
         Unet with nn.ModuleList
@@ -228,10 +226,10 @@ class UNet(nn.Module):
             outputs = self.down_list[idx](enc_ftrs[idx])
             enc_ftrs.append(outputs)
         enc_ftrs = enc_ftrs[::-1]
+        
         tmp_ftr = enc_ftrs[0]
         for idx in range(len(self.up_list)):
             tmp_ftr = self.up_list[idx](tmp_ftr, enc_ftrs[idx+1])
-        logits = self.head(tmp_ftr)
         
         '''
         Unet with simple code
@@ -245,13 +243,14 @@ class UNet(nn.Module):
         up_layer_3 = self.up3(up_layer_2, down_layer_1)
         tmp_ftr = self.up4(up_layer_3, down_layer_0)
         '''
-        
+
+
+        logits = self.head(tmp_ftr)
         
         # interpolate 
         _, _, H, W = logits.shape
         if (H,W)==self.out_sz: pass
         else:
-            print('interpolate')
             logits = F.interpolate(logits, self.out_sz)
         
         # add activation (not necessary)
