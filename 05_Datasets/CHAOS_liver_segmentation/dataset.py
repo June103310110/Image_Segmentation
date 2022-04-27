@@ -4,22 +4,11 @@
 # In[1]:
 
 
-# BATCH_SIZE = 8 # 8 for 256x256/ 16 for 128x128
-# NUM_LABELS = 1
-# WIDTH = 256
-# HEIGHT = 256 
-# MULTI_CHANNELS = False
-# device = 'cuda:0'
-
-
-# In[2]:
-
-
 import warnings
 warnings.filterwarnings("ignore")
 
 
-# In[3]:
+# In[2]:
 
 
 import cv2
@@ -33,14 +22,6 @@ import albumentations as A
 import os
 
 from sklearn.model_selection import train_test_split
-# import torch.optim as optim
-# import time
-# import ipywidgets as widgets
-# import pickle
-
-# # 從repo裡面導入套件
-# from utils import show_image_mask, mask_CutMix#, patience
-# from unet import UNet
 
 
 # 導入dicom套件
@@ -48,7 +29,7 @@ from pydicom import dcmread
 from pydicom.data import get_testdata_files
 
 
-# In[4]:
+# In[3]:
 
 
 def show_image(*img_):
@@ -69,32 +50,7 @@ def show_image(*img_):
 
 # ### Build torch dataset
 
-# In[5]:
-
-
-# def getImg(path):
-#     if path.__contains__('.dcm'):  
-#       # pydcm read image
-#         ds = dcmread(path)
-#         file = ds.pixel_array
-#         file = file.astype('uint8') # 調整格式以配合albumentation套件需求
-#     elif path.__contains__('.png'):
-#         file = cv2.imread(path)[...,0]
-#         file = file.astype('float32') # 調整格式以配合albumentation套件需求
-        
-#         if 'MRI' in path:
-#             file[file!=63] = 0
-#             file[file!=0] = 1
-#         elif 'CT' in path:
-#             file /= 255
-#         else:
-#             raise ValueError('Non-support dtype')
-#     else:
-#         raise ValueError(f'img format: {path} unknown')
-#     return file
-
-
-# In[6]:
+# In[4]:
 
 
 def getAllDataPath(dir_path, imgOnly=False, test_split_size=None):
@@ -123,28 +79,18 @@ def getAllDataPath(dir_path, imgOnly=False, test_split_size=None):
         
 
 
-# In[7]:
+# In[5]:
 
 
-root = '/home/jovyan/DA/DATA/ST_data/CHAOS_AIAdatasets/2_Domain_Adaptation_dataset/CT/'
-CT_data = getAllDataPath(root, test_split_size=0.2)
-root = '/home/jovyan/DA/DATA/ST_data/CHAOS_AIAdatasets/2_Domain_Adaptation_dataset/MRI/MRI_Label/'
-MRI_data = getAllDataPath(root, test_split_size=0.2)
-root = '/home/jovyan/DA/DATA/ST_data/CHAOS_AIAdatasets/2_Domain_Adaptation_dataset/MRI/MRI_nonLabel/'
-MRI_imgOnly_data = getAllDataPath(root, imgOnly=True)
-
-for data in ['CT_data', 'MRI_data', 'MRI_imgOnly_data']:
-    i = eval(data)
-    for k in i.keys():
-        print(data,k, np.shape(i[k]))
 
 
-# In[8]:
+
+# In[6]:
 
 
 #  https://pytorch.org/tutorials/beginner/basics/data_tutorial.html
 
-class CTMRI_ImageDataset(Dataset):
+class CustomImageDataset(Dataset):
     def __init__(self, imgs_anno_path_list,
                  #dtype, 
 #                  dir_path,
@@ -194,19 +140,18 @@ class CTMRI_ImageDataset(Dataset):
     
     def getImg(self, path):
         if path.__contains__('.dcm'):  
-          # pydcm read image
+            # pydcm read image
             ds = dcmread(path)
             file = ds.pixel_array
             # image process
             file = cv2.medianBlur(file, 5)
             file = cv2.normalize(file, None, alpha=0, beta=1, norm_type=cv2.NORM_MINMAX, dtype=cv2.CV_32F)
-#             file = file.astype('float32')
+
         elif path.__contains__('.png'):
             file = cv2.imread(path)[...,0]
             file = file.astype('float32') # 調整格式以配合albumentation套件需求
 
             if 'MRI' in path:
-#                 pass
                 file[file!=63] = 0
                 file[file!=0] = 1
             elif 'CT' in path:
@@ -219,44 +164,46 @@ class CTMRI_ImageDataset(Dataset):
      
 
 
-# #### 使用albumentations進行資料擴增
-
-# In[9]:
+# In[7]:
 
 
 # # https://albumentations.ai/docs/getting_started/mask_augmentation/
 
-# BATCH_SIZE = 8
-# WIDTH, HEIGHT = (256,256)
+BATCH_SIZE = 8
+WIDTH, HEIGHT = (256,256)
 
-# transform = A.Compose([
-# #     A.HorizontalFlip(p=0.5),
-# #     A.RandomBrightnessContrast(brightness_limit=[-0.05, 0.05], p=0.2),
-# #     A.Rotate((-30, 30), interpolation=0), 
-# #     A.RandomContrast(limit=0.2, p=1), 
-# #     A.MedianBlur(always_apply=True, blur_limit=(3, 5)),
+transform = A.Compose([
+    A.ToFloat(always_apply=True),
+    A.Resize(WIDTH, HEIGHT),
+])
 
-# #     A.Normalize(p=1, mean=(0.485), std=(0.229)),
-# #     A.ToFloat(always_apply=True),
-#     A.Resize(WIDTH, HEIGHT),
-# ])
-
-# target_transform = A.Compose([
-# #     A.Normalize(p=1, mean=(0.485), std=(0.229)),     
-# #     A.MedianBlur(always_apply=True, blur_limit=(3, 5)),
-# #     A.ToFloat(always_apply=True),
-#     A.Resize(WIDTH, HEIGHT),
-# ])
+target_transform = A.Compose([
+    A.ToFloat(always_apply=True),
+    A.Resize(WIDTH, HEIGHT),
+])
 
 
 # ### 建立DataLoader
 
-# In[10]:
+# In[8]:
 
 
 if '__main__' == __name__:
 # 建議同時間只有8個(256,256)的sample進行計算 (Total = BATCH_SIZE*MULTIPLE_BATCH)
+    
+    root = './data/CHAOS_AIAdatasets/2_Domain_Adaptation_dataset/CT/'
+    CT_data = getAllDataPath(root, test_split_size=0.2)
+    root = './data/CHAOS_AIAdatasets/2_Domain_Adaptation_dataset/MRI/MRI_Label/'
+    MRI_data = getAllDataPath(root, test_split_size=0.2)
+    root = './data/CHAOS_AIAdatasets/2_Domain_Adaptation_dataset/MRI/MRI_nonLabel/'
+    MRI_imgOnly_data = getAllDataPath(root, imgOnly=True)
 
+    for data in ['CT_data', 'MRI_data', 'MRI_imgOnly_data']:
+        i = eval(data)
+        for k in i.keys():
+            print(data,k, np.shape(i[k]))
+        
+        
     dataset_train = CTMRI_ImageDataset(MRI_data['train'], transform=transform)
     dataloader_train = torch.utils.data.DataLoader(dataset_train, batch_size=BATCH_SIZE, shuffle=True, drop_last=True)
 
@@ -270,27 +217,7 @@ if '__main__' == __name__:
     CT_dataloader_test = torch.utils.data.DataLoader(CT_dataset_test, batch_size=BATCH_SIZE, shuffle=False)
 
 
-#     a = iter(dataloader_train)
-#     x, y = a.next()
-    all_y = torch.Tensor([])
-    all_x = 0
-    for batch in CT_dataset_train:
-        x, y = batch
-        all_y = torch.cat([all_y, y])
-        
-#         all_x += len(x[x>1])
-#         assert len(x[x>1])>0
-#         print(x.max().item())
-#         all_x.append(x.max().item())
-#     print(all_y.unique())
-#     print(all_x)
-#     print(max(all_x))
-
-# MRI_imgOnly_dataset_train = ImageOnly_Dataset(MRI_imgOnly_data['train'], transform=transform)
-# MRI_image_dataloader = torch.utils.data.DataLoader(MRI_imgOnly_dataset_train, batch_size=BATCH_SIZE, shuffle=True, drop_last=True)
-
-
-# In[ ]:
+# In[10]:
 
 
 import os
