@@ -34,7 +34,7 @@ import albumentations as A
 
 def show_image(*img_):
     for i in img_:
-        assert i.__class__.__name__ == 'ndarray', 'input data type should be ndarray'
+        assert i.__class__.__name__ == 'ndarray', 'imput data type should be ndarray'
 
     plt.figure(figsize=(10,3))
     for i, img in enumerate(list(img_), 1):
@@ -79,10 +79,11 @@ def getAllDataPath(*dirs, test_split_size=None):
 #  https://pytorch.org/tutorials/beginner/basics/data_tutorial.html
 
 class CustomImageDataset(Dataset):
-    def __init__(self, imgs_anno_path_list, transform=None):
+    def __init__(self, imgs_anno_path_list, transform=None, pseudo_label=False):
         self.imgs_anno_path_list = imgs_anno_path_list
         assert isinstance(self.imgs_anno_path_list, list), 'Need Input a list'
         self.transform = transform
+        self.pseudo_label = pseudo_label
         
     def __len__(self):
         return len(self.imgs_anno_path_list)
@@ -110,10 +111,37 @@ class CustomImageDataset(Dataset):
         image = image.float()/255.
         
         mask = torch.Tensor(mask) 
-        mask = mask.unsqueeze(0)
         mask = mask.float()/255.
-
+        if self.pseudo_label:
+            mask = self.apply_pseudo_label(image, mask)
+        mask = mask.unsqueeze(0)
+        
         return image, mask
+    
+    def apply_pseudo_label(self,x, y):
+        x = x.permute(1,2,0).numpy().copy()
+        y = y.numpy().copy()
+
+        gray = cv2.cvtColor(x, cv2.COLOR_RGB2GRAY)
+        gray = cv2.medianBlur(gray, 5)
+        gray = (gray*255).astype(np.uint8)
+        edges = cv2.Canny(gray,80,220)
+        cnts, hier = cv2.findContours(edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE) #CV_RETR_EXTERNAL
+        cnts = sorted(cnts, key=lambda tup: tup.shape[0])
+
+        img = np.zeros(gray.shape).astype(np.uint8)
+        img = cv2.drawContours(img, cnts[-4:], -1, (255), 3)
+        cnts, hier = cv2.findContours(img.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
+        cv2.fillPoly(img, cnts, 255)
+
+
+        pseudo_y = img
+        pseudo_y[pseudo_y>0] = 1
+        pseudo_y[pseudo_y!=1] = 0
+        pseudo_y[y==1] = 2
+        return torch.Tensor(pseudo_y)
+
     
 
 
@@ -123,17 +151,10 @@ class CustomImageDataset(Dataset):
 # https://albumentations.ai/docs/getting_started/mask_augmentation/
 if '__main__' == __name__:
     transform = A.Compose([
-        A.CenterCrop(300, 900, p=0.5),
-        A.HorizontalFlip(p=0.5),
-        A.RandomBrightnessContrast(brightness_limit=[-0.05, 0.05], p=0.2),
-        A.Rotate((-30, 30), interpolation=0),  
-
-        A.ToFloat(always_apply=True),
         A.Resize(WIDTH, HEIGHT),
     ])
 
     target_transform = A.Compose([
-        A.ToFloat(always_apply=True),
         A.Resize(WIDTH, HEIGHT),
     ])
 
@@ -151,8 +172,6 @@ if '__main__' == __name__:
     data = getAllDataPath(img_dir, anno_dir, test_split_size=0.2)
     data.keys()
 
-
-# In[57]:
     # 在這邊會強制對所有不滿BATCH_SIZE的訓練資料做數量上的匹配(單純把路徑複製貼上直到滿足16筆資料)，接著透過CustomImageDataset的transform對16筆資料做資料擴增
     if len(data['train']) < 16: 
         lis = data['train']

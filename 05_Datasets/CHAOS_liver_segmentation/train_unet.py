@@ -38,15 +38,17 @@ device = 'cuda:0'
 
 
 # https://albumentations.ai/docs/getting_started/mask_augmentation/
+
 transform = A.Compose([
-#     A.CenterCrop(300, 900, p=0.5),
+#     A.HorizontalFlip(p=0.5),
 #     A.RandomBrightnessContrast(brightness_limit=[-0.05, 0.05], p=0.2),
-#     A.Rotate((-10, 10), interpolation=0),  
+#     A.Rotate((-30, 30), interpolation=0), 
+#     A.RandomContrast(limit=0.2, p=1), 
 
     A.Resize(WIDTH, HEIGHT),
 ])
 
-target_transform = A.Compose([
+target_transform = A.Compose([                       
     A.Resize(WIDTH, HEIGHT),
 ])
 
@@ -54,31 +56,30 @@ target_transform = A.Compose([
 # In[5]:
 
 
-path = os.getcwd()
-img_dir = f'{path}/data/capsule/test/scratch/'
-anno_dir = f'{path}/data/capsule/ground_truth/scratch/'
+root = './data/CHAOS_AIAdatasets/2_Domain_Adaptation_dataset/CT/'
+CT_data = getAllDataPath(root, test_split_size=0.2)
+root = './data/CHAOS_AIAdatasets/2_Domain_Adaptation_dataset/MRI/MRI_Label/'
+MRI_data = getAllDataPath(root, test_split_size=0.2)
+root = './data/CHAOS_AIAdatasets/2_Domain_Adaptation_dataset/MRI/MRI_nonLabel/'
+MRI_imgOnly_data = getAllDataPath(root, imgOnly=True)
 
-defective_number = [i.split('.')[0] for i in os.listdir(img_dir)]
-print('defective_number: ',defective_number)
-data = getAllDataPath(img_dir, anno_dir, test_split_size=0.4)
-print(data.keys())
-data['train'] = data['train']
+for data in ['CT_data', 'MRI_data', 'MRI_imgOnly_data']:
+    i = eval(data)
+    for k in i.keys():
+        print(data,k, np.shape(i[k]))
 
 
-# 在這邊會強制對所有不滿BATCH_SIZE的訓練資料做數量上的匹配(單純把路徑複製貼上直到滿足16筆資料)，接著透過CustomImageDataset的transform對16筆資料做資料擴增
-if len(data['train']) < 16: 
-    lis = data['train']
-    lis = [lis[i%len(lis)] for i in range(BATCH_SIZE)]
-    data['train'] = lis
+dataset_train = CustomImageDataset(MRI_data['train'], transform=transform)
+dataloader_train = torch.utils.data.DataLoader(dataset_train, batch_size=BATCH_SIZE, shuffle=True, drop_last=True)
 
-dataset_train = CustomImageDataset(data['train'], transform=transform, pseudo_label=True)
-dataloader_train = torch.utils.data.DataLoader(dataset_train, batch_size=BATCH_SIZE, drop_last=True,
-                                               shuffle=True, pin_memory=True,
-                                              )
+dataset_test = CustomImageDataset(MRI_data['test'], transform=target_transform) # **如果要正式使用要記得把這裡換成X_test
+dataloader_test = torch.utils.data.DataLoader(dataset_test, batch_size=BATCH_SIZE, shuffle=False)
 
-dataset_test = CustomImageDataset(data['test'], transform=target_transform, pseudo_label=True) # **如果要正式使用要記得把這裡換成X_test
-dataloader_test = torch.utils.data.DataLoader(dataset_test, batch_size=BATCH_SIZE, drop_last=False,
-                                              shuffle=False, pin_memory=True)
+CT_dataset_train = CustomImageDataset(CT_data['train'], transform=transform)
+CT_dataloader_train = torch.utils.data.DataLoader(CT_dataset_train, batch_size=BATCH_SIZE, shuffle=True, drop_last=True)
+
+CT_dataset_test = CustomImageDataset(CT_data['test'], transform=target_transform)
+CT_dataloader_test = torch.utils.data.DataLoader(CT_dataset_test, batch_size=BATCH_SIZE, shuffle=False)
 
 
 # In[6]:
@@ -92,9 +93,10 @@ take first image in every batch.
 for data in dataloader_train:
     for x, y in zip(*data): 
         print(x.shape, y.shape)
-        print(x.unique().max(), y.unique())
-        show_image(x.permute(1,2,0).numpy(), y.squeeze(0).numpy())
-#         break 
+        print(np.histogram(x.numpy()), y.unique())
+        show_image(x.squeeze(0).numpy(), y.squeeze(0).numpy())
+        
+    break
 
 
 # In[7]:
@@ -109,9 +111,9 @@ ref: https://pytorch.org/docs/stable/optim.html
 '''
 
 model = UNet
-model = model((WIDTH, HEIGHT), in_ch=3, out_ch=3, activation=None).to(device)
+model = model((WIDTH, HEIGHT), in_ch=1, out_ch=1, activation=None).to(device)
 
-optimizer = optim.Adam(model.parameters(), lr = 1e-3)
+optimizer = optim.Adam(model.parameters(), lr = 1e-2)
 
 
 # In[ ]:
@@ -127,7 +129,7 @@ abs: training model
 '''
 from torchvision.ops import sigmoid_focal_loss
 
-EPOCHS = 399
+EPOCHS = 300
 min_target_loss_value = 100
 save_root = './data/save_weights/'
 os.makedirs(save_root, exist_ok=True)
@@ -164,7 +166,7 @@ for epoch in range(EPOCHS):
 #         loss = DiceLoss()(outputs, source_label)
 #         loss = torch.nn.MSELoss()(outputs, source_label)
 #         loss = torch.nn.BCEWithLogitsLoss(pos_weight = torch.Tensor([100]).to(device))(outputs, source_label)
-#         loss = sigmoid_focal_loss(outputs, source_label, reduction='sum')
+        loss = sigmoid_focal_loss(outputs, source_label, reduction='sum')
         
         '''
         title: multi channel
@@ -174,7 +176,7 @@ for epoch in range(EPOCHS):
         - if FocalLoss, source_label should be 1 channel, ex: (B, 1, W, H)
         '''
 #         loss = nn.CrossEntropyLoss()(outputs, source_label.long())
-        loss = FocalLoss(alpha=[0.1,0.1,1], gamma = 1, size_average=False)(outputs, source_label.long())
+#         loss = FocalLoss(alpha=[0.05,0.1,1], gamma=1, size_average=False)(outputs, source_label.long())
         class_loss_value += loss.item()
 
         
@@ -205,11 +207,11 @@ for epoch in range(EPOCHS):
 # In[ ]:
 
 
-model = UNet
-model = model(HEIGHT, in_ch=3, out_ch=3, activation=None).to(device)
-save_root = './data/save_weights/'
-filepath = f'{save_root}model.bin'
-model.load_state_dict(torch.load(filepath)) 
+# model = UNet
+# model = model(HEIGHT, in_ch=3, out_ch=3, activation=nn.Softmax()).to(device)
+# save_root = './data/save_weights/'
+# filepath = f'{save_root}best_model.bin'
+# model.load_state_dict(torch.load(filepath)) 
 
 
 # In[ ]:
@@ -238,8 +240,11 @@ for i, data in enumerate(dataloader_train, 1):
 #     outputs[outputs>=threshold] = 1.
 #     outputs[outputs!=1] = 0.
 
-    img_process = lambda image:image.permute(0,2,3,1).cpu().numpy()
+    img_process = lambda image:image.squeeze(1).cpu().numpy()
     mask_process = lambda mask:mask.squeeze(1).cpu().numpy()
+
+#     img_process = lambda image:image.permute(0,2,3,1).cpu().numpy()
+#     mask_process = lambda mask:mask.squeeze(1).cpu().numpy()
     
     for x, m, outputs in zip(img_process(image), mask_process(mask), mask_process(outputs)):
         show_image(x, m, outputs)

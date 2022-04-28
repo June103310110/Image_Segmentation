@@ -152,10 +152,10 @@ class CustomImageDataset(Dataset):
             file = file.astype('float32') # 調整格式以配合albumentation套件需求
 
             if 'MRI' in path:
-                file[file!=63] = 0
-                file[file!=0] = 1
+                file[file!=63] = 0.
+                file[file!=0] = 1.
             elif 'CT' in path:
-                file /= 255
+                file /= 255.
             else:
                 raise ValueError('Non-support dtype')
         else:

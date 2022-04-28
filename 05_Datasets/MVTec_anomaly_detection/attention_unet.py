@@ -53,6 +53,7 @@ device
 
 # In[5]:
 
+    
 
 ## 加入instance normalization
 class convBlock(nn.Module):
@@ -73,6 +74,34 @@ class convBlock(nn.Module):
         x = self.relu(x)
         return x
 
+class Attention_block(nn.Module):
+    def __init__(self,F_g,F_l,F_int):
+        super(Attention_block,self).__init__()
+        self.W_g = nn.Sequential(
+            nn.Conv2d(F_g, F_int, kernel_size=1,stride=1,padding=0,bias=True),
+            nn.BatchNorm2d(F_int)
+            )
+        
+        self.W_x = nn.Sequential(
+            nn.Conv2d(F_l, F_int, kernel_size=1,stride=1,padding=0,bias=True),
+            nn.BatchNorm2d(F_int)
+        )
+
+        self.psi = nn.Sequential(
+            nn.Conv2d(F_int, 1, kernel_size=1,stride=1,padding=0,bias=True),
+            nn.BatchNorm2d(1),
+            nn.Sigmoid()
+        )
+        
+        self.relu = nn.ReLU(inplace=True)
+        
+    def forward(self,g,x):
+        g1 = self.W_g(g)
+        x1 = self.W_x(x)
+        psi = self.relu(g1+x1)
+        psi = self.psi(psi)
+
+        return x*psi
 
 # In[6]:
 
@@ -150,6 +179,7 @@ class Up(nn.Module):
 
         pad = 1 if (padding==True or padding=='same') else 0
         self.conv = convBlock(in_ch, out_ch, 3, padding=pad)
+        
     
     def forward(self, x, enc_ftrs):
         x = self.up(x)
@@ -163,7 +193,33 @@ class Up(nn.Module):
         enc_ftrs   = torchvision.transforms.CenterCrop([H, W])(enc_ftrs)
         return enc_ftrs
             
+        
+class Att_Up(nn.Module):
+    def __init__(self, in_ch, out_ch, bilinear=True, padding=True):
+        super().__init__()
+        if bilinear:
+            # normal convolutions to reduce the number of channels
+            self.up = nn.Sequential(nn.Upsample(scale_factor = 2, mode = 'bilinear', align_corners = True),
+                                    nn.Conv2d(in_ch, (in_ch // 2), 3, padding=1, bias=True))
+        else:
+            self.up = nn.ConvTranspose2d(in_ch, (in_ch // 2), kernel_size = 2, stride = 2)
 
+        pad = 1 if (padding==True or padding=='same') else 0
+        self.att = Attention_block(F_g=out_ch, F_l=out_ch, F_int=out_ch//2)
+        self.conv = convBlock(in_ch, out_ch, 3, padding=pad)
+        
+    def forward(self, x, enc_ftrs):
+        x = self.up(x)
+        enc_ftrs = self.crop(enc_ftrs, x)
+        enc_ftrs = self.Att(x, enc_ftrs)
+        x = torch.cat([x, enc_ftrs], dim=1)
+        x = self.conv(x)
+        return x
+    
+    def crop(self, enc_ftrs, x):
+        _, _, H, W = x.shape
+        enc_ftrs   = torchvision.transforms.CenterCrop([H, W])(enc_ftrs)
+        return enc_ftrs
 
 # In[10]:
 
@@ -201,7 +257,7 @@ class UNet(nn.Module):
         self.down_list = nn.ModuleList([Down(chs[i], chs[i+1], padding='same')for i in range(len(chs)-1)]) 
         chs = chs[::-1]
         self.up_list = nn.ModuleList([Up(chs[i], chs[i+1], padding='same')for i in range(len(chs)-1)]) 
-        
+
         '''
         Unet with simple code
         ---
