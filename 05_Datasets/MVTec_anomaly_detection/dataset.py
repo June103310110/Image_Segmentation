@@ -34,7 +34,7 @@ import albumentations as A
 
 def show_image(*img_):
     for i in img_:
-        assert i.__class__.__name__ == 'ndarray', 'imput data type should be ndarray'
+        assert i.__class__.__name__ == 'ndarray', 'input data type should be ndarray'
 
     plt.figure(figsize=(10,3))
     for i, img in enumerate(list(img_), 1):

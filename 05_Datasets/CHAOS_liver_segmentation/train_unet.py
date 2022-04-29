@@ -90,12 +90,13 @@ Abs: test transform on dataloader_train.
 ---
 take first image in every batch.
 '''
-for data in dataloader_train:
+for data in CT_dataloader_train:
     for x, y in zip(*data): 
         print(x.shape, y.shape)
         print(np.histogram(x.numpy()), y.unique())
+    
         show_image(x.squeeze(0).numpy(), y.squeeze(0).numpy())
-        
+
     break
 
 
@@ -113,10 +114,10 @@ ref: https://pytorch.org/docs/stable/optim.html
 model = UNet
 model = model((WIDTH, HEIGHT), in_ch=1, out_ch=1, activation=None).to(device)
 
-optimizer = optim.Adam(model.parameters(), lr = 1e-2)
+optimizer = optim.Adam(model.parameters(), lr = 1e-1)
 
 
-# In[ ]:
+# In[8]:
 
 
 '''
@@ -136,7 +137,15 @@ os.makedirs(save_root, exist_ok=True)
 
 for epoch in range(EPOCHS):  
     class_loss_value = 0.0
-
+    if epoch < 5:
+        for param_group in optimizer.param_groups:
+            param_group['lr'] = 1e-5
+    elif epoch == 5:
+        for param_group in optimizer.param_groups:
+            param_group['lr'] = 1e-1
+    
+            
+            
     for i, (source_data, source_label) in enumerate(dataloader_train):
         # zero the parameter gradients
         '''
@@ -204,7 +213,7 @@ for epoch in range(EPOCHS):
     
 
 
-# In[ ]:
+# In[9]:
 
 
 # model = UNet
@@ -214,7 +223,7 @@ for epoch in range(EPOCHS):
 # model.load_state_dict(torch.load(filepath)) 
 
 
-# In[ ]:
+# In[10]:
 
 
 '''
@@ -229,27 +238,21 @@ for i, data in enumerate(dataloader_train, 1):
         image = image.to(device)
         mask = mask.to(device)
         outputs = model(image)
-#     outputs = outputs[:,1,:,:]
-        print(outputs.shape)
-        outputs = torch.argmax(outputs, dim=1)
-        outputs = outputs.unsqueeze(1)
-    print(outputs.shape)
-#     loss = DiceLoss()(outputs, mask)
-#     print(outputs.shape)
-#     threshold = 0
-#     outputs[outputs>=threshold] = 1.
-#     outputs[outputs!=1] = 0.
+
+    'single channel'
+    threshold = 0
+    outputs[outputs>=threshold] = 1.
+    outputs[outputs!=1] = 0.
 
     img_process = lambda image:image.squeeze(1).cpu().numpy()
     mask_process = lambda mask:mask.squeeze(1).cpu().numpy()
 
-#     img_process = lambda image:image.permute(0,2,3,1).cpu().numpy()
-#     mask_process = lambda mask:mask.squeeze(1).cpu().numpy()
     
     for x, m, outputs in zip(img_process(image), mask_process(mask), mask_process(outputs)):
         show_image(x, m, outputs)
+        break
+            
     del outputs, image, mask
-#         break
 
 
 # In[ ]:
