@@ -1,4 +1,18 @@
-# Image_Segmentation
+# Image_Segmentation 影像分割，入門到大師之路
+## 章節介紹
+### 01_Segmentation_basic
+影像分割的深度學習基礎
+### 02_Augmentation_methods
+影像分割用的影像增強方法，特別是特定資料集的操作(TDB)
+### 03_Models
+影像分割的模型們
+### 04_Instance_segmentation
+實例分割範例
+### 05_Datasets
+資料集與Demo
+### 06_Domain_adapation
+影像分割結合領域遷移(include semi/self-supervised)
+
 ### 參考文件
 - [Unet家族的演進](https://github.com/June103310110/Image_Segmentation/blob/main/PART2/README.md)
 
