@@ -67,7 +67,7 @@ target_transform = A.Compose([
 root = './data/CHAOS_AIAdatasets/2_Domain_Adaptation_dataset/CT/'
 CT_data = getAllDataPath(root, test_split_size=0.2)
 root = './data/CHAOS_AIAdatasets/2_Domain_Adaptation_dataset/MRI/MRI_Label/'
-MRI_data = getAllDataPath(root, test_split_size=0.2)
+MRI_data = getAllDataPath(root, test_split_size=0.8)
 root = './data/CHAOS_AIAdatasets/2_Domain_Adaptation_dataset/MRI/MRI_nonLabel/'
 MRI_imgOnly_data = getAllDataPath(root, imgOnly=True)
 
@@ -154,8 +154,8 @@ ref:
 '''
  
 # model = UNet
-model = ResUnet # suggest: only use it for single channel outputs, Sigmoid activation, Dice loss or focal loss
-# model = AttUnet # better ResUnet 
+# model = ResUnet # suggest: only use it for single channel outputs, Sigmoid activation, Dice loss or focal loss
+model = AttUnet # better ResUnet 
 model = model((WIDTH, HEIGHT), in_ch=1, out_ch=1, activation=None).to(device)
 
 optimizer = optim.Adam(model.parameters(), lr = 1e-1)
@@ -166,7 +166,7 @@ optimizer = optim.Adam(model.parameters(), lr = 1e-1)
 
 '''
 torch-lightning
-'''
+''' 
 save_root = './data/save_weights/'
 model = unetModel(model)
 
@@ -174,7 +174,7 @@ model = unetModel(model)
 # try:
 checkpoint_callback = ModelCheckpoint(monitor='train_loss',
             dirpath=save_root,
-            filename='{epoch}_{val_loss:.2f}_model',
+            filename='{epoch}_{train_loss:.6f}_model',
 #                 save_top_k = 3,
             every_n_epochs = 30,
             save_on_train_epoch_end = True,

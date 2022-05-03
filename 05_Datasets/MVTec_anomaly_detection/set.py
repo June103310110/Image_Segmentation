@@ -1,6 +1,5 @@
 import os 
 os.system('wget https://github.com/June103310110/Image_Segmentation/releases/download/datasets/requirements_mvtec.txt')
-os.system('wget https://github.com/June103310110/Image_Segmentation/releases/download/datasets/dataset_mvtec.py -O dataset.py')
 os.system('pip3 install -r ./requirements_mvtec.txt')
 os.system('pip3 install -U gdown')
 import gdown 
