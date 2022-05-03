@@ -3,7 +3,7 @@
 - 01_Segmentation_basic
   - 影像分割的深度學習基礎
 - 02_Augmentation_methods
-  - 影像分割用的影像增強方法，特別是特定資料集的操作(TDB)
+  - 影像分割用的影像增強方法，特別是對特定資料集的操作(TBD)
 - 03_Models
   - 影像分割的模型們
 - 04_Instance_segmentation
