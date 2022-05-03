@@ -1,5 +1,5 @@
 # Image_Segmentation 影像分割，入門到大師之路
-## 章節介紹
+## 章節介紹(規劃大綱)
 - 01_Segmentation_basic
   - 影像分割的深度學習基礎
 - 02_Augmentation_methods
