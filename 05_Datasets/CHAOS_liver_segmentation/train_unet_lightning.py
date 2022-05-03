@@ -27,9 +27,7 @@ import albumentations as A
 
 
 from dataset import getAllDataPath, CustomImageDataset, show_image
-from unet import UNet
-from ResUnet import ResUnet
-from AttentionUnet import AttUnet
+from unet import UNet,ResUnet,AttUnet
 from loss import DiceLoss, FocalLoss
 
 
@@ -39,7 +37,6 @@ from loss import DiceLoss, FocalLoss
 BATCH_SIZE = 8
 WIDTH = 256
 HEIGHT = 256
-device = 'cuda:0'
 
 
 # In[4]:
@@ -67,7 +64,7 @@ target_transform = A.Compose([
 root = './data/CHAOS_AIAdatasets/2_Domain_Adaptation_dataset/CT/'
 CT_data = getAllDataPath(root, test_split_size=0.2)
 root = './data/CHAOS_AIAdatasets/2_Domain_Adaptation_dataset/MRI/MRI_Label/'
-MRI_data = getAllDataPath(root, test_split_size=0.8)
+MRI_data = getAllDataPath(root, test_split_size=0.2)
 root = './data/CHAOS_AIAdatasets/2_Domain_Adaptation_dataset/MRI/MRI_nonLabel/'
 MRI_imgOnly_data = getAllDataPath(root, imgOnly=True)
 
@@ -156,7 +153,7 @@ ref:
 # model = UNet
 # model = ResUnet # suggest: only use it for single channel outputs, Sigmoid activation, Dice loss or focal loss
 model = AttUnet # better ResUnet 
-model = model((WIDTH, HEIGHT), in_ch=1, out_ch=1, activation=None).to(device)
+model = model((WIDTH, HEIGHT), in_ch=1, out_ch=1, activation=None)#.to(device)
 
 optimizer = optim.Adam(model.parameters(), lr = 1e-1)
 
@@ -175,7 +172,6 @@ model = unetModel(model)
 checkpoint_callback = ModelCheckpoint(monitor='train_loss',
             dirpath=save_root,
             filename='{epoch}_{train_loss:.6f}_model',
-#                 save_top_k = 3,
             every_n_epochs = 30,
             save_on_train_epoch_end = True,
             mode = 'min',
@@ -183,7 +179,7 @@ checkpoint_callback = ModelCheckpoint(monitor='train_loss',
 
             )
 
-trainer = pl.Trainer(devices=2, accelerator="gpu", strategy='ddp', callbacks=[checkpoint_callback], max_epochs=200)
+trainer = pl.Trainer(devices=4, accelerator="gpu", strategy='ddp', callbacks=[checkpoint_callback], max_epochs=200)
 trainer.fit(model=model, train_dataloaders=dataloader_train)
 # except:
 #     print('strategy=ddp or dp is not compatible with an interactive environmen(ex: Jupyter Notebook)')

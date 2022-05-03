@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[1]:
+# In[ ]:
 
 
 import torch # 1.9
@@ -12,15 +12,11 @@ import numpy as np
 import cv2
 import os
 
-
-# In[2]:
-
-
 import warnings
 warnings.filterwarnings("ignore")
 
 
-# In[3]:
+# In[ ]:
 
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -28,15 +24,24 @@ device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 device
 
 
-# ## Chapter1 : UNet網路構建
+# <!-- # ## Chapter1 : UNet網路構建
+# 
+# # ### ConvBlock
+# # - 加入Instance Norm.
+# # - <img src="https://miro.medium.com/max/983/1*p84Hsn4-e60_nZPllkxGZQ.png" 512="50%">
+# # 
+# # > 上圖為一整個batch的feature-map。輸入6張圖片，輸入6chs, 輸出也是6chs(C方向看進去是channel, N方向看進去是圖片) -->
+# 
 
+# ## Chapter1 : UNet網路構建
+# ref: https://amaarora.github.io/2020/09/13/unet.html
+# 
 # ### ConvBlock
 # - 加入Instance Norm.
-# - <img src="https://miro.medium.com/max/983/1*p84Hsn4-e60_nZPllkxGZQ.png" 512="50%">
-# 
-# > 上圖為一整個batch的feature-map。輸入6張圖片，輸入6chs, 輸出也是6chs(C方向看進去是channel, N方向看進去是圖片)
+# ![image.png](attachment:821e216c-5652-4d8b-87ab-5036f64a2485.png)
+# > 上圖皆為一整個batch的feature-map。輸入6張圖片，輸入6chs, 輸出也是6chs(C方向看進去是channel, N方向看進去是圖片)
 
-# In[4]:
+# In[ ]:
 
 
 # # 原始版本
@@ -64,21 +69,15 @@ class convBlock(nn.Module):
         self.conv1 = nn.Conv2d(in_ch, out_ch, kernel_size, padding=padding, bias=False)
         self.relu  = nn.ReLU()
         self.conv2 = nn.Conv2d(out_ch, out_ch, kernel_size, padding=padding, bias=False)
-        self.Norm = torch.nn.InstanceNorm2d(out_ch)
-#         self.Norm = torch.nn.GroupNorm(1, out_ch)
-#         self.Norm = torch.nn.BatchNorm2d(out_ch)
+        self.INorm = torch.nn.InstanceNorm2d(out_ch, affine=True)
         
     def forward(self, x):
-        x = self.Norm(self.conv1(x))
+        x = self.INorm(self.conv1(x))
         x = self.relu(x)
-        x = self.Norm(self.conv2(x))
+        x = self.INorm(self.conv2(x))
         x = self.relu(x)
         return x
-
-
-# In[6]:
-
-
+    
 if __name__ == '__main__':
     block = convBlock(1, 64, 3, padding=1)
     WIDTH, HEIGHT = (512, 512)
@@ -86,12 +85,11 @@ if __name__ == '__main__':
     print(block(x).shape)
 
 
+# In[ ]:
+
+
 # ## Encoder(DownStream)
-# 將影像進行編碼，過程中解析度會縮小(maxpooling、convolution)
-
-# In[7]:
-
-
+# 將影像進行編碼(下採樣)，過程中解析度會被縮小、讓Unet能學到不同層次的特徵(maxpooling、convolution)
 class Down(nn.Module):
     def __init__(self, in_ch, out_ch, padding=True):
         super().__init__()
@@ -105,41 +103,7 @@ class Down(nn.Module):
         x = self.pool(x)
         return x
 
-
-# In[8]:
-
-
-if __name__ == '__main__':
-    down = Down(3, 64)
-    WIDTH, HEIGHT = (512, 512)
-    
-    x = torch.randn(1, 3, WIDTH, HEIGHT)
-    x = down(x)
-    print(x.shape)
-
-
-# ## Decoder(UpStream)
-# 將編碼還原成影像，過程中解析度會放大直到回復成輸入影像解析度(transposed Convolution)。
-# - 將編碼還原成影像是因為影像分割是pixel-wise的精度進行預測，解析度被還原後，就可以知道指定pixel位置所對應的類別
-# - 類別資訊通常用feature-map的channels(chs)去劃分，一個channel代表一個class
-# - 有許多UNet模型架構會有輸入576x576，但輸出只有388x388的情況，是因為他們沒有對卷積過程做padding，導致解析度自然下降。最後只要把mask resize到388x388就能繼續計算loss。
-
-# ### Transposed Conv and UpsampleConv
-# <img src="https://i.imgur.com/eIIJxre.png" alt="drawing" 512="300"/>
-# <img src="https://i.imgur.com/uLo7icF.png" alt="drawing" 512="300"/>
-# 
-# Transposed Conv 
-# - 透過上面的操作做轉置卷積，feature-map上的數值會作為常數與kernel相乘
-# 
-# UpsampleConv
-# - 先做上採樣(Upsample/ Unpooling)
-# - 然後作卷積(padding = same)
-# <!-- #### 替代方案 UpSampling(Unpooling)+Convolution -->
-# 
-
-# In[9]:
-
-
+#  將影像做上採樣，同時concat來自編碼路徑的feature map
 class Up(nn.Module):
     def __init__(self, in_ch, out_ch, bilinear=True, padding=True):
         super().__init__()
@@ -164,26 +128,17 @@ class Up(nn.Module):
         _, _, H, W = x.shape
         enc_ftrs   = torchvision.transforms.CenterCrop([H, W])(enc_ftrs)
         return enc_ftrs
-            
 
 
-# In[10]:
+# # Unet, 2015
+# ### ![image.png](attachment:787083e6-2870-404e-ac78-2914faf13b0b.png)
+
+# In[ ]:
 
 
-if __name__ == '__main__':
-    enc_ftrs = torch.randn(1, 256, 32, 32)
-    x = torch.randn(1, 512, 28, 28)
-    x = Up(512, 256, bilinear=True, padding=True)(x, enc_ftrs)
-    print(x.shape)
-
-
-# ## Unet構建
+## Unet構建
 # 結合encoder和decoder組成Unet。
-# - 在輸出層如果用softmax做多元分類問題預測的話，類別數量要+1(num_classes+background)
-
-# In[11]:
-
-
+# 在輸出層如果用softmax做多元分類問題預測的話，類別數量要+1(num_classes+background)
 class UNet(nn.Module):
     def __init__(self, out_sz, in_ch, out_ch, bilinear=True, activation=None):
         super().__init__()     
@@ -194,7 +149,7 @@ class UNet(nn.Module):
         
         self.head = nn.Conv2d(chs[0], out_ch, 1)
         self.activation = activation
-
+        self.out_sz = out_sz
         
         '''
         Unet with nn.ModuleList
@@ -217,8 +172,6 @@ class UNet(nn.Module):
         self.up4 = Up(128, 64, bilinear)
         '''
         
-
-        
     def forward(self, x):
         down_layer_0 = self.input(x)
         
@@ -228,10 +181,10 @@ class UNet(nn.Module):
             outputs = self.down_list[idx](enc_ftrs[idx])
             enc_ftrs.append(outputs)
         enc_ftrs = enc_ftrs[::-1]
+        
         tmp_ftr = enc_ftrs[0]
         for idx in range(len(self.up_list)):
             tmp_ftr = self.up_list[idx](tmp_ftr, enc_ftrs[idx+1])
-        logits = self.head(tmp_ftr)
         
         '''
         Unet with simple code
@@ -245,13 +198,14 @@ class UNet(nn.Module):
         up_layer_3 = self.up3(up_layer_2, down_layer_1)
         tmp_ftr = self.up4(up_layer_3, down_layer_0)
         '''
-        
+
+
+        logits = self.head(tmp_ftr)
         
         # interpolate 
         _, _, H, W = logits.shape
         if (H,W)==self.out_sz: pass
         else:
-            print('interpolate')
             logits = F.interpolate(logits, self.out_sz)
         
         # add activation (not necessary)
@@ -261,25 +215,223 @@ class UNet(nn.Module):
         return logits
 
 
-# In[12]:
+# # ResUnet, 2017
+# ![image.png](attachment:9c1b783b-7fb6-43bc-9170-a221261704aa.png)
+
+# In[ ]:
 
 
-if __name__ == '__main__':
-    HEIGHT, WIDTH,  = (512, 512)
-    unet = UNet(HEIGHT, 3, 1, activation=None)
+'''
+跟普通的ConvBlock比起來，多做了一個skip & add的動作
+---
+使用心得: Residual有讓輪廓資訊保留更多的傾向，這在原始論文的道路檢測上是好的，但對瑕疵檢測的議題不見得好，需要更多的訓練來de-noise。
+'''
+class ResidualConvBlock(nn.Module):
+    def __init__(self, in_ch, out_ch, stride=2, padding='same'):
+        super().__init__()
+        pad_size = lambda kernel_size:(kernel_size-1)//2
+        kernel_size = 3
+        pad = pad_size(kernel_size) if padding=='same' else padding   
+        
+        self.conv_block = nn.Sequential(
+          nn.BatchNorm2d(in_ch),
+#           nn.InstanceNorm2d(in_ch),
+          nn.ReLU(),
+          nn.Conv2d(in_ch, out_ch, kernel_size=3, stride=stride, padding=pad),
+          nn.BatchNorm2d(out_ch),
+#           nn.InstanceNorm2d(out_ch),
+          nn.ReLU(),
+          nn.Conv2d(out_ch, out_ch, kernel_size=3, padding=pad),
+          )
+        self.conv_skip = nn.Sequential(
+          nn.Conv2d(in_ch, out_ch, kernel_size=3, stride=stride, padding=pad),
+            nn.BatchNorm2d(out_ch),
+        )
+
+    def forward(self, x):
+        return self.conv_block(x) + self.conv_skip(x)
     
-    x    = torch.randn(1, 3, WIDTH, HEIGHT)#.to(device)
-    y_pred = unet(x)
-    print(y_pred.shape)
+class ResUnet(nn.Module):
+    def __init__(self, out_sz, in_ch, out_ch, bilinear=True, activation=None):
+#     def __init__(self, num_classes=1, channel=3, filters=[64, 128, 256, 512], activation=nn.Sigmoid()):
+        super(ResUnet, self).__init__()
+        if isinstance(out_sz,(int)): self.out_sz = (out_sz, out_sz)
+        if isinstance(out_sz,(tuple,list)): self.out_sz = tuple(out_sz)
+        
+        chs = (64, 128, 256, 512, 1024)
+        
+        self.head = nn.Conv2d(chs[0], out_ch, 1)
+        self.activation = activation
+        self.out_sz = out_sz
+        
+        '''
+        Unet with nn.ModuleList
+        '''
+        self.input_layer = nn.Sequential(
+            nn.Conv2d(in_ch, chs[0], kernel_size=3, padding=1),
+            nn.BatchNorm2d(chs[0]),
+            nn.ReLU(),
+            nn.Conv2d(chs[0], chs[0], kernel_size=3, padding=1),
+        )
+        self.input_skip = nn.Sequential(
+            nn.Conv2d(in_ch, chs[0], kernel_size=3, padding=1)
+        )
+        self.down_list = nn.ModuleList([ResidualConvBlock(chs[i], chs[i+1], 2, padding='same') for i in range(len(chs)-1)]) 
+        chs = chs[::-1]
+        self.up_list = nn.ModuleList([Up(chs[i], chs[i+1], bilinear=True, padding='same') for i in range(len(chs)-1)]) 
 
 
-# In[2]:
+    def forward(self, x):
+        x = self.input_layer(x) + self.input_skip(x)
+        
+        enc_ftrs = [x]
+        for idx in range(len(self.down_list)):
+            outputs = self.down_list[idx](enc_ftrs[idx])
+            enc_ftrs.append(outputs)
+        enc_ftrs = enc_ftrs[::-1]
+        
+        tmp_ftr = enc_ftrs[0] 
+        for idx in range(len(self.up_list)):
+            tmp_ftr = self.up_list[idx](tmp_ftr, enc_ftrs[idx+1])
+        
+        logits = self.head(tmp_ftr)
+        
+        # interpolate 
+        _, _, H, W = logits.shape
+        if (H,W)==self.out_sz: pass
+        else:
+            logits = F.interpolate(logits, self.out_sz)
+        
+        # add activation (not necessary)
+        if self.activation:
+            logits = self.activation(logits)
+        
+        return logits
+    
 
 
-import os
-if __name__ == '__main__':
-    if get_ipython().__class__.__name__ =='ZMQInteractiveShell':
-        os.system('jupyter nbconvert unet.ipynb --to python')
+# # Attention Unet, 2018
+# ![image.png](attachment:99ec69d8-2972-4286-a543-4e5174c94ac1.png)
+
+# In[ ]:
+
+
+'''
+attention block並不真的使用attention layer，
+而是用一個輕量的模組對邊碼路徑產出、即將concat到解碼路徑上的特徵向量做重要性評估，
+概念上也許比較像LSTM的gate。
+相近論文: SE-net>>>SE-Unet (Squeeze-and-Excitation Block:)
+---
+ref: 
+Semantic Segmentation with Squeeze-and-Excitation Block: Application to Infarct Segmentation in DWI, Medical Imaging Meets NIPS workshop, NIPS 2017
+'''
+
+# 一個輕量的、channel-wise的特徵向量重要性判斷模組
+class Attention_block(nn.Module):
+    def __init__(self,F_g,F_l,F_int):
+        super(Attention_block,self).__init__()
+        self.W_g = nn.Sequential(
+            nn.Conv2d(F_g, F_int, kernel_size=1,stride=1,padding=0,bias=True),
+            nn.BatchNorm2d(F_int)
+            )
+        
+        self.W_x = nn.Sequential(
+            nn.Conv2d(F_l, F_int, kernel_size=1,stride=1,padding=0,bias=True),
+            nn.BatchNorm2d(F_int)
+        )
+
+        self.psi = nn.Sequential(
+            nn.Conv2d(F_int, 1, kernel_size=1,stride=1,padding=0,bias=True),
+            nn.BatchNorm2d(1),
+            nn.Sigmoid()
+        )
+        
+        self.relu = nn.ReLU(inplace=True)
+        
+    def forward(self,g,x):
+        g1 = self.W_g(g)
+        x1 = self.W_x(x)
+        psi = self.relu(g1+x1)
+        psi = self.psi(psi)
+
+        return x*psi
+    
+# 加入Attention_block的上採樣，在cat之前先用Attention_block作加權
+class Att_Up(nn.Module):
+    def __init__(self, in_ch, out_ch, bilinear=True, padding=True):
+        super().__init__()
+        if bilinear:
+            # normal convolutions to reduce the number of channels
+            self.up = nn.Sequential(nn.Upsample(scale_factor = 2, mode = 'bilinear', align_corners = True),
+                                    nn.Conv2d(in_ch, (in_ch // 2), 3, padding=1, bias=True))
+        else:
+            self.up = nn.ConvTranspose2d(in_ch, (in_ch // 2), kernel_size = 2, stride = 2)
+
+        pad = 1 if (padding==True or padding=='same') else 0
+        self.att = Attention_block(F_g=out_ch, F_l=out_ch, F_int=out_ch//2)
+        self.conv = convBlock(in_ch, out_ch, 3, padding=pad)
+        
+    def forward(self, x, enc_ftrs):
+        x = self.up(x)
+        enc_ftrs = self.crop(enc_ftrs, x)
+        enc_ftrs = self.att(x, enc_ftrs)
+        x = torch.cat([x, enc_ftrs], dim=1)
+        x = self.conv(x)
+        return x
+    
+    def crop(self, enc_ftrs, x):
+        _, _, H, W = x.shape
+        enc_ftrs   = torchvision.transforms.CenterCrop([H, W])(enc_ftrs)
+        return enc_ftrs
+    
+class AttUnet(nn.Module):
+    def __init__(self, out_sz, in_ch, out_ch, bilinear=True, activation=None):
+        super().__init__()     
+        if isinstance(out_sz,(int)): self.out_sz = (out_sz, out_sz)
+        if isinstance(out_sz,(tuple,list)): self.out_sz = tuple(out_sz)
+        
+        chs = (64, 128, 256, 512, 1024)
+        
+        self.head = nn.Conv2d(chs[0], out_ch, 1)
+        self.activation = activation
+        self.out_sz = out_sz
+        
+        '''
+        Unet with nn.ModuleList
+        '''
+        self.input = convBlock(in_ch, chs[0], 3, padding=1)
+        self.down_list = nn.ModuleList([Down(chs[i], chs[i+1], padding='same')for i in range(len(chs)-1)]) 
+        chs = chs[::-1]
+        self.up_list = nn.ModuleList([Att_Up(chs[i], chs[i+1], padding='same')for i in range(len(chs)-1)]) 
+        
+        
+    def forward(self, x):
+        down_layer_0 = self.input(x)
+        
+        'Unet with nn.ModuleList'
+        enc_ftrs = [down_layer_0]
+        for idx in range(len(self.down_list)):
+            outputs = self.down_list[idx](enc_ftrs[idx])
+            enc_ftrs.append(outputs)
+        enc_ftrs = enc_ftrs[::-1]
+        
+        tmp_ftr = enc_ftrs[0]
+        for idx in range(len(self.up_list)):
+            tmp_ftr = self.up_list[idx](tmp_ftr, enc_ftrs[idx+1])
+
+        logits = self.head(tmp_ftr)
+        
+        # interpolate 
+        _, _, H, W = logits.shape
+        if (H,W)==self.out_sz: pass
+        else:
+            logits = F.interpolate(logits, self.out_sz)
+        
+        # add activation (not necessary)
+        if self.activation:
+            logits = self.activation(logits)
+        
+        return logits
 
 
 # In[ ]:
