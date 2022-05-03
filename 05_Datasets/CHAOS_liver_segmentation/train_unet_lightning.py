@@ -149,10 +149,14 @@ ref:
 - U-Net: Convolutional Networks for Biomedical Image Segmentation, 2015
 - Attention U-Net: Learning Where to Look for the Pancreas, 2018
 '''
- 
+
+model_name = 'AttUnet' 
+# model_name = 'ResUnet'  # Note: Sigmoid activation, Dice loss or focal loss
+# model_name = 'AttUnet'  # better ResUnet 
+model = eval(model_name)
 # model = UNet
-# model = ResUnet # suggest: only use it for single channel outputs, Sigmoid activation, Dice loss or focal loss
-model = AttUnet # better ResUnet 
+# model = ResUnet 
+# model = AttUnet 
 model = model((WIDTH, HEIGHT), in_ch=1, out_ch=1, activation=None)#.to(device)
 
 optimizer = optim.Adam(model.parameters(), lr = 1e-1)
@@ -181,82 +185,3 @@ checkpoint_callback = ModelCheckpoint(monitor='train_loss',
 
 trainer = pl.Trainer(devices=4, accelerator="gpu", strategy='ddp', callbacks=[checkpoint_callback], max_epochs=200)
 trainer.fit(model=model, train_dataloaders=dataloader_train)
-# except:
-#     print('strategy=ddp or dp is not compatible with an interactive environmen(ex: Jupyter Notebook)')
-
-
-# ## testing
-
-# In[27]:
-
-
-# 'from normal pytorch'
-# # model = ResUnet
-# # model = model(HEIGHT, in_ch=1, out_ch=3, activation=None).to(device)
-# # save_root = './data/save_weights/'
-# # filepath = f'{save_root}E299_model.bin'
-# # model.load_state_dict(torch.load(filepath)) 
-
-# 'pytorch-lightning'
-# model = ResUnet
-# model = model((WIDTH, HEIGHT), in_ch=1, out_ch=1, activation=None).to(device)
-# model = unetModel(model)
-# checkpoint = torch.load(save_root+'epoch=99_train_loss=775.5070_model.ckpt')
-# model.load_state_dict(checkpoint['state_dict'])
-
-
-# In[28]:
-
-
-# '''
-# abs: testing model
-# ---
-# '''
-
-# for i, data in enumerate(dataloader_test, 1):
-#     image, mask = data
-#     print(len(image), image.shape, mask.shape)
-#     with torch.no_grad():
-#         image = image.to(device)
-#         mask = mask.to(device)
-#         outputs = model(image)
-
-#     'single channel outputs'
-#     threshold = 0
-#     outputs[outputs>=threshold] = 1.
-#     outputs[outputs!=1] = 0.
-
-#     'multi channel outputs'
-# #     outputs = F.softmax(outputs)
-# #     outputs = torch.argmax(outputs, dim=1) # with pseudo label
-# #     outputs = (torch.argmax(outputs, dim=1)==2).int() # only liver segmentation
-    
-#     loss = DiceLoss()(outputs, mask)
-#     print(loss)
-#     img_process = lambda image:image.squeeze(1).cpu().numpy()
-#     mask_process = lambda mask:mask.squeeze(1).cpu().numpy()
-
-#     for x, m, outputs in zip(img_process(image), mask_process(mask), mask_process(outputs)):
-#         show_image(x, m, outputs)
-# #         break
-            
-#     del outputs, image, mask
-
-
-# In[29]:
-
-
-import os
-from IPython import get_ipython 
-try:
-    if get_ipython().__class__.__name__=='ZMQInteractiveShell':
-        os.system('jupyter nbconvert train_unet_lightning.ipynb --to python')
-except NameError:
-    pass
-
-
-# In[ ]:
-
-
-
-
