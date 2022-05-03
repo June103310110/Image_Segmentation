@@ -6,3 +6,4 @@ saved/
 data/
 **/SOLO/
 **/*.zip
+**/lightning_logs/
