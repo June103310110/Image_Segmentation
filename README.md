@@ -3,13 +3,13 @@
 - 01_Segmentation_basic
   - 影像分割的深度學習基礎
 - 02_Augmentation_methods
-  - 影像分割用的影像增強方法，特別是對特定資料集的操作(TBD)
+  - 影像分割用的影像增強方法
 - 03_Models
   - 影像分割的模型們
 - 04_Instance_segmentation
   - 實例分割範例
 - 05_Datasets
-  - 資料集與Demo應用範例
+  - 資料集與Demo應用範例、包含dataset預處理
 - 06_Domain_adapation
   - 影像分割結合領域遷移(include semi/self-supervised)
 
