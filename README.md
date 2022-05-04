@@ -9,7 +9,7 @@
 - 04_Instance_segmentation
   - 實例分割範例
 - 05_Datasets
-  - 資料集與Demo
+  - 資料集與Demo應用範例
 - 06_Domain_adapation
   - 影像分割結合領域遷移(include semi/self-supervised)
 
