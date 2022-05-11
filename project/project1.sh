@@ -18,6 +18,8 @@ pause
 
 EnvSetting(){
 echo "Enviroment setting, download utils"
+!pip install -q -U albumentations
+!pip install -q pydicom
 mkdir utils
 echo "download utils..."
 wget -q https://github.com/June103310110/Image_Segmentation/releases/download/AIA_course/loss.py -O utils/loss.py
