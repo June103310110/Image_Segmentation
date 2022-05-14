@@ -18,8 +18,9 @@ pause
 
 EnvSetting(){
 echo "Enviroment setting, download utils"
-!pip install -q -U albumentations
-!pip install -q pydicom
+pip install -q -U albumentations
+pip install -q -U pydicom
+pip install -q -U pytorch-lightning
 mkdir utils
 echo "download utils..."
 wget -q https://github.com/June103310110/Image_Segmentation/releases/download/AIA_course/loss.py -O utils/loss.py

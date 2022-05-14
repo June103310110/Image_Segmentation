@@ -42,9 +42,9 @@ from pydicom.data import get_testdata_files
 # In[4]:
 
 
-from dataset import getAllDataPath, CustomImageDataset, show_image
-from unet import UNet, ResUnet, AttUnet
-from loss import DiceLoss, FocalLoss
+from utils.dataset import getAllDataPath, CustomImageDataset, show_image
+from utils.unet import UNet, ResUnet, AttUnet
+from utils.loss import DiceLoss, FocalLoss
 
 
 # In[5]:
