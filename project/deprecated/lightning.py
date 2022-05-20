@@ -189,7 +189,7 @@ torch-lightning
 save_root = './data/save_weights/'
 os.makedirs(save_root, exist_ok=True)
 # model = unetModel(model)
-# model = discModel(model, discrimator, early_stop=0.5)
+model = discModel(model, discrimator, early_stop=0.6)
 # model = unetWithDiscModel(model, discrimator, lamb=0.1)
 # train model
 # try:
@@ -204,15 +204,13 @@ checkpoint_callback = ModelCheckpoint(monitor='train_loss',
             )
 
 
+# disc_model = discModel(model, discrimator, early_stop=0.6)
+# unet_model = unetWithDiscModel(model, discrimator, lamb=0.1)
 # for i in range(10):
     
-#     model = discModel(model, discrimator, early_stop=0.3)
-#     trainer = pl.Trainer(devices=4, accelerator="gpu", strategy='ddp', callbacks=[checkpoint_callback], max_epochs=10)
-#     trainer.fit(model=model, train_dataloaders=[dataloader_train, dataloader_train])
-    
-model = unetWithDiscModel(model, discrimator, lamb=0.1)
-trainer = pl.Trainer(devices=4, accelerator="gpu", strategy='ddp', callbacks=[checkpoint_callback], max_epochs=2)
-trainer.fit(model=model, train_dataloaders=[dataloader_train, dataloader_train])
+#     trainer = pl.Trainer(devices=1, accelerator="gpu", strategy='ddp', callbacks=[checkpoint_callback], max_epochs=10)
+#     trainer.fit(model=model, train_dataloaders=[CT_dataloader_train, dataloader_train])
+#     print(model.early_stop)
 # early_stop_callback = EarlyStopping(monitor="train_loss", 
 #                                     min_delta=0.00,
 #                                     patience=3,
@@ -221,3 +219,9 @@ trainer.fit(model=model, train_dataloaders=[dataloader_train, dataloader_train])
 #                                     mode="min")
 # trainer = pl.Trainer(devices=1, accelerator="gpu", strategy='ddp', callbacks=[checkpoint_callback, early_stop_callback], max_epochs=2)
 # trainer.fit(model=unet_disc_model, train_dataloaders=(CT_dataloader_train, dataloader_train))
+
+
+
+trainer = pl.Trainer(devices=1, accelerator="gpu", strategy='ddp', callbacks=[checkpoint_callback], max_epochs=10)
+trainer.fit(model=model, train_dataloaders=[CT_dataloader_train, dataloader_train])
+# print(model.early_stop)
